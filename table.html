@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0e1014">
+<meta name="description" content="Explore all 118 elements in an interactive 3D periodic table — Bohr models, orbital shapes, periodic-trend heatmaps, and live phase-at-temperature colouring.">
+<!-- PWA: installable on phone & desktop -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.png" type="image/png" sizes="64x64">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Periodic 3D">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Exo:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<title>Interactive Periodic Table · Learn Chemistry in 3D</title>
+<link rel="stylesheet" href="table.css">
+</head>
+<body>
+  <canvas id="bg"></canvas>
+  <div id="vignette"></div>
+  <!-- ADDED: ambient VFX layers — accent-tinted aurora + fine grain, both behind the scene -->
+  <div id="fxAurora" aria-hidden="true"></div>
+  <div id="fxGrain" aria-hidden="true"></div>
+  <div id="title">Periodic Table<small>INTERACTIVE 3D · CLICK ANY ELEMENT TO EXPLORE</small></div>
+
+  <div id="controls">
+    <div class="bar">
+      <div class="seg" role="group" aria-label="View mode">
+        <button id="btn-table" class="active">table</button>
+        <button id="btn-sphere">sphere</button>
+        <button id="btn-helix">helix</button>
+        <button id="btn-grid">grid</button>
+      </div>
+      <button id="muteBtn" type="button" title="Mute / unmute sound effects" aria-label="Mute or unmute sound effects" aria-pressed="false"></button>
+      <input id="search" placeholder="Search name / symbol / number…" autocomplete="off" aria-label="Search elements by name, symbol, or atomic number">
+    </div>
+    <div class="bar">
+      <div class="dropdown" id="highlightDD">
+        <button class="ddbtn" id="hlBtn">Highlight ▾ <span id="hlCount"></span></button>
+        <div class="ddmenu" id="hlMenu">
+          <div class="ddsection">Metal type</div>
+          <label><input type="checkbox" data-group="type" data-k="Metal">Metals</label>
+          <label><input type="checkbox" data-group="type" data-k="Nonmetal">Nonmetals</label>
+          <label><input type="checkbox" data-group="type" data-k="Metalloid">Metalloids</label>
+          <div class="ddsection">State at 25°C</div>
+          <label><input type="checkbox" data-group="state" data-k="Solid">Solid</label>
+          <label><input type="checkbox" data-group="state" data-k="Liquid">Liquid</label>
+          <label><input type="checkbox" data-group="state" data-k="Gas">Gas</label>
+          <div class="ddsection">Block</div>
+          <label><input type="checkbox" data-group="block" data-k="s">s-block</label>
+          <label><input type="checkbox" data-group="block" data-k="p">p-block</label>
+          <label><input type="checkbox" data-group="block" data-k="d">d-block</label>
+          <label><input type="checkbox" data-group="block" data-k="f">f-block</label>
+          <button class="ddclear" id="clearFilters">Clear all ✕</button>
+        </div>
+      </div>
+      <label>Colour&nbsp;by</label>
+      <select id="colorby" aria-label="Colour elements by property">
+        <option value="cat">Category</option>
+        <option value="en">Electronegativity</option>
+        <option value="melt">Melting point</option>
+        <option value="boil">Boiling point</option>
+        <option value="radius">Atomic radius</option>
+        <option value="ie">Ionization energy</option>
+        <option value="ea">Electron affinity</option>
+        <option value="mass">Atomic mass</option>
+        <option value="density">Density</option>
+        <option value="phase">● State @ temperature</option>
+      </select>
+      <label>Sort&nbsp;by</label>
+      <select id="sortby" aria-label="Sort elements by property">
+        <option value="">Atomic number (grid)</option>
+        <option value="en">Electronegativity</option>
+        <option value="melt">Melting point</option>
+        <option value="boil">Boiling point</option>
+        <option value="radius">Atomic radius</option>
+        <option value="ie">Ionization energy</option>
+        <option value="ea">Electron affinity</option>
+        <option value="mass">Atomic mass</option>
+        <option value="density">Density</option>
+      </select>
+      <button id="sortDir" title="Toggle ascending / descending"><span id="sortDirLbl">high&rarr;low</span></button>
+      <label>Theme</label>
+      <select id="themeSel" aria-label="Colour theme">
+        <option value="cosmic">Cosmic</option>
+        <option value="galaxy">Midnight Galaxy</option>
+        <option value="ocean">Ocean Depths</option>
+        <option value="tech">Tech Innovation</option>
+        <option value="ember">Ember Sunset</option>
+        <option value="forest">Forest</option>
+      </select>
+    </div>
+    <div class="bar" id="tempBar">
+      <label for="tempSlider">Temperature</label>
+      <input id="tempSlider" type="range" min="0" max="6000" value="298" step="1" aria-label="Temperature in kelvin">
+      <span id="tempVal">298 K · 25°C</span>
+      <button id="tempPreset" type="button" title="Reset to room temperature">room</button>
+      <div class="phasekey">
+        <span><i style="background:#8fd0ff"></i>Solid</span>
+        <span><i style="background:#6ee7a8"></i>Liquid</span>
+        <span><i style="background:#ff9d6b"></i>Gas</span>
+        <span><i style="background:#4a4f5a"></i>No data</span>
+      </div>
+    </div>
+    <div id="caption"></div>
+
+    <!-- Compact controls for phones / tablets (built + wired in JS) -->
+    <div id="mbar">
+      <input id="mSearch" placeholder="Search name / symbol / number…" autocomplete="off" aria-label="Search elements">
+      <div class="mrow">
+        <select id="mView" aria-label="View">
+          <option value="table">Table</option>
+          <option value="sphere">Sphere</option>
+          <option value="helix">Helix</option>
+          <option value="grid">Grid</option>
+        </select>
+        <button id="mOptionsBtn" type="button">Options ▾</button>
+        <button id="mMuteBtn" type="button" title="Mute / unmute sound effects" aria-label="Mute or unmute sound effects" aria-pressed="false"></button>
+      </div>
+      <div class="mrow">
+        <select id="mGroup" aria-label="Group"></select>
+        <select id="mPeriod" aria-label="Period"></select>
+      </div>
+    </div>
+  </div>
+
+  <div id="mSheet" hidden>
+    <div class="msheetcard">
+      <div class="mshhead"><b>Options</b><button id="mSheetClose" type="button" aria-label="Close">×</button></div>
+      <div class="msec">Colour by</div><div id="mColorWrap"></div>
+      <div class="msec">Sort by</div><div class="mrow" id="mSortWrap"></div>
+      <div class="msec">Highlight</div><div id="mHl"></div>
+      <button id="mClear" type="button">Clear all ✕</button>
+    </div>
+  </div>
+
+  <div id="groupBar"></div>
+  <div id="periodBar"></div>
+
+  <div id="zoomctl">
+    <button id="zoomIn" title="Zoom in (Ctrl +)">＋</button>
+    <input id="zoomSlider" type="range" min="0" max="100" value="50" title="Zoom" aria-label="Zoom level">
+    <button id="zoomOut" title="Zoom out (Ctrl −)">－</button>
+  </div>
+
+  <div id="container"></div>
+
+  <div id="legend">
+    <div class="ttl" id="legendTitle">Categories</div>
+    <div id="legendRows"></div>
+    <div id="scalebar"><div class="grad"></div><div class="lbls"><span id="scaleMin"></span><span id="scaleMax"></span></div></div>
+  </div>
+
+  <button id="resetView" type="button" title="Reset view — recenter &amp; zoom (R)" aria-label="Reset view position and zoom">↺</button>
+  <button id="installBtn" type="button" hidden aria-label="Install this app">⬇ Install app</button>
+
+  <div id="hint">drag rotate · scroll pan · Ctrl+scroll zoom · keys 1–4 switch views · R reset · / search</div>
+
+  <div id="layernav">
+    <button class="arrow" id="layPrev">&#8249;</button>
+    <div class="layers" id="layerBtns"></div>
+    <button class="arrow" id="layNext">&#8250;</button>
+  </div>
+
+  <button id="sphereToggle">Step inside the sphere</button>
+
+  <!-- Detail overlay -->
+  <div id="overlay" role="dialog" aria-modal="true" aria-labelledby="dName">
+    <div id="card">
+      <div id="cardHead">
+        <div class="big" id="dSym"></div>
+        <div class="meta">
+          <h2 id="dName"></h2>
+          <div class="sub" id="dSub"></div>
+          <span class="badge" id="dBadge"></span>
+        </div>
+        <div id="cardNav">
+          <button class="cardnav" id="prevEl" title="Previous element (←)" aria-label="Previous element">‹</button>
+          <button class="cardnav" id="nextEl" title="Next element (→)" aria-label="Next element">›</button>
+          <button id="shareBtn" title="Copy a link to this element" aria-label="Copy link to this element">Share ↗</button>
+        </div>
+        <button id="close" aria-label="Close">&times;</button>
+      </div>
+      <div id="tabs" role="tablist" aria-label="Element views">
+        <button data-t="bohr" class="active">Atom (Bohr 3D)</button>
+        <button data-t="shapes">Orbital shapes 3D</button>
+        <button data-t="orbital">Orbital diagram</button>
+        <button data-t="data">Data &amp; facts</button>
+      </div>
+      <div id="panels">
+        <div class="panel active" id="panel-bohr">
+          <div id="bohrWrap"><canvas id="bohrCanvas"></canvas></div>
+          <div id="bohrTools">
+            <button id="bohrMode" title="Switch 2D / 3D">3D</button>
+            <button id="bohrPause" title="Pause / play">⏸</button>
+          </div>
+          <div id="bohrInfo"></div>
+        </div>
+        <div class="panel" id="panel-shapes">
+          <div id="shapesWrap"><canvas id="shapesCanvas"></canvas></div>
+          <div id="shapesLabel"></div>
+          <div id="shapesLegend"></div>
+        </div>
+        <div class="panel" id="panel-orbital"></div>
+        <div class="panel" id="panel-data"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+  <script src="https://unpkg.com/three@0.128.0/examples/js/renderers/CSS3DRenderer.js"></script>
+  <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="elements-data.js" defer></script>
+<script src="table.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#F4EFFF">
+<title>Valence — learn all 118 elements by playing with them</title>
+<meta name="description" content="Valence is a free, open-source, no-sign-up chemistry learning platform built around a 3D periodic table you can spin, poke and pull apart.">
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.png" type="image/png" sizes="64x64">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Valence">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Valence">
+<meta property="og:title" content="Valence — learn all 118 elements by playing with them">
+<meta property="og:description" content="A free, open-source chemistry platform built around a 3D periodic table. No sign-up, works offline.">
+<meta property="og:image" content="icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Valence — learn all 118 elements by playing with them">
+<meta name="twitter:description" content="A free, open-source chemistry platform built around a 3D periodic table. No sign-up, works offline.">
+<meta name="twitter:image" content="icon-512.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Figtree:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+<!-- ===================== NAV ===================== -->
+<div class="wrap nav">
+  <div class="nav-inner">
+    <a class="brand" href="#top">
+      <span class="tile" style="--tile:38px;--tint:linear-gradient(150deg,#8F63FF,#5B2FD6);">
+        <span class="sym" style="font-size:16px">V</span>
+      </span>
+      Valence
+    </a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#about">About</a>
+      <a href="#guide">Guide</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn" href="table.html">Open the <span class="long">3D&nbsp;</span>table</a>
+      <a class="btn btn-primary" href="table.html">Launch the app</a>
+    </div>
+  </div>
+</div>
+
+<main id="top">
+
+<!-- ===================== HERO ===================== -->
+<section class="wrap hero">
+  <div class="hero-grid">
+    <div>
+      <span class="chip"><span class="dot" style="background:var(--lagoon)"></span>Free · open-source · no sign-up</span>
+      <h1>Learn all 118 elements by <span class="hl">playing with them.</span></h1>
+      <p class="lead">Valence is chemistry you can hold. Spin the table in 3D, pull an atom apart shell by shell, and watch a whole period melt when you drag the temperature slider. It keeps working when your wifi doesn't.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="table.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3l14 9-14 9V3z"/></svg>
+          Open the Periodic Table
+        </a>
+        <a class="btn" href="#guide">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          How it works
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat"><b>118</b><span>elements</span></div>
+        <div class="stat"><b>4</b><span>3D views</span></div>
+        <div class="stat"><b>0</b><span>sign-ups</span></div>
+        <div class="stat"><b>$0</b><span>forever</span></div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <span class="orb a" aria-hidden="true"></span>
+      <span class="orb b" aria-hidden="true"></span>
+      <span class="orb c" aria-hidden="true"></span>
+      <span class="orb d" aria-hidden="true"></span>
+      <div class="stage-pad">
+        <div class="tile" id="bigTile" style="--tint:linear-gradient(150deg,#FF9E6B,#FF7A3D 55%,#D9481A)">
+          <span class="num" id="tileNum">11</span>
+          <span class="sym" id="tileSym">Na</span>
+          <span class="nm" id="tileNm">SODIUM</span>
+        </div>
+      </div>
+      <p class="stage-meta" id="tileMeta">Alkali metal · melts at 371 K</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== ABOUT ===================== -->
+<section class="wrap section" id="about">
+  <div class="head rv">
+    <span class="chip"><span class="dot" style="background:var(--grape)"></span>About Valence</span>
+    <h2>Built for students, owned by the community.</h2>
+    <p>No company, no investors — just a free tool that's meant to stay that way.</p>
+  </div>
+
+  <div class="about-grid">
+    <div class="about-card rv">
+      <div class="signchip"><span class="dot"></span>Created by Legit · Owned by the community</div>
+      <p>Legit is a developer who wanted to help students actually enjoy learning chemistry — so this free, interactive 3D periodic table got built. All 118 elements, their structures and trends, in one place.</p>
+      <p><b>No sign-ups. No email. No phone number.</b> Just open it and explore — guest mode always works, and there's nothing to create an account for.</p>
+      <div class="oss-box">
+        <span class="chip"><span class="dot" style="background:var(--lagoon)"></span>Open source &amp; free — forever</span>
+        <p>Want to make it better? You're welcome to use the code, on one condition: <b>keep it open-source and free for everyone</b>, exactly like this. Built for students, owned by no one but the community.</p>
+      </div>
+      <p class="tagline">MADE WITH ⚛ FOR CURIOUS MINDS</p>
+    </div>
+
+    <div class="about-orbs rv">
+      <span class="tile" style="--tint:linear-gradient(150deg,#A98BFF,#7B4BFF 55%,#4B21B8)">
+        <span class="sym" style="font-size:34px">V</span>
+      </span>
+      <div>
+        <h3>Valence</h3>
+        <div class="sub">Interactive 3D Periodic Table</div>
+      </div>
+      <div class="stat-row">
+        <div class="stat"><b>118</b><span>elements</span></div>
+        <div class="stat"><b>$0</b><span>always</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== GUIDE / HOW TO USE ===================== -->
+<section class="wrap section" id="guide">
+  <div class="head rv">
+    <span class="chip"><span class="dot" style="background:var(--lagoon)"></span>Guide</span>
+    <h2>Install it like a real app.</h2>
+    <p>No app store and no download file — it installs straight to your home screen or desktop and even works offline after the first visit.</p>
+  </div>
+
+  <div class="guide-grid">
+    <div class="platform-card rv">
+      <span class="tile" style="--tint:linear-gradient(150deg,#6FD6FF,#3DA5FF 55%,#1663C4)">
+        <span class="sym" style="font-size:22px">A</span>
+      </span>
+      <h3>Android (Chrome)</h3>
+      <p>Tap the <b>⬇ Install app</b> button (top-right), or open the <b>⋮</b> menu and choose <b>Install app</b>.</p>
+    </div>
+    <div class="platform-card rv" style="transition-delay:80ms">
+      <span class="tile" style="--tint:linear-gradient(150deg,#FFE071,#FFD23F 55%,#C9931A)">
+        <span class="sym" style="font-size:22px">i</span>
+      </span>
+      <h3>iPhone / iPad (Safari)</h3>
+      <p>Tap the <b>Share</b> icon, scroll down, then tap <b>Add to Home Screen</b>.</p>
+    </div>
+    <div class="platform-card rv" style="transition-delay:160ms">
+      <span class="tile" style="--tint:linear-gradient(150deg,#FF7FAE,#FF3D8B 55%,#B5124F)">
+        <span class="sym" style="font-size:22px">D</span>
+      </span>
+      <h3>Desktop (Chrome / Edge)</h3>
+      <p>Click the <b>install icon</b> in the address bar, or the <b>⬇ Install app</b> button. It opens in its own window.</p>
+    </div>
+  </div>
+
+  <div class="shortcuts-panel rv">
+    <h3>Quick controls</h3>
+    <div class="shortcut-row">
+      <span class="keys"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd></span>
+      <span>Switch between Table, Sphere, Helix and Grid views.</span>
+    </div>
+    <div class="shortcut-row">
+      <span class="keys"><kbd>R</kbd></span>
+      <span>Reset — recenters and re-zooms the current view.</span>
+    </div>
+    <div class="shortcut-row">
+      <span class="keys"><kbd>/</kbd></span>
+      <span>Search — jump to any name, symbol or atomic number.</span>
+    </div>
+    <div class="shortcut-row">
+      <span class="keys"><kbd>click</kbd></span>
+      <span>Tap any element for its Bohr model, orbitals, trends and facts.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== LAUNCH ===================== -->
+<section class="wrap section" id="launch">
+  <div class="launch rv">
+    <h2>Open the table. No form, no account.</h2>
+    <p>Every element, live in 3D, right now — no card, no email, no waiting.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="table.html">Open the Periodic Table</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <div class="foot">
+    <a class="brand" href="#top">
+      <span class="tile" style="--tile:38px;--tint:linear-gradient(150deg,#8F63FF,#5B2FD6);"><span class="sym" style="font-size:16px">V</span></span>
+      Valence
+    </a>
+    <nav aria-label="Footer">
+      <a href="#about">About</a>
+      <a href="#guide">Guide</a>
+      <a href="table.html">3D table</a>
+    </nav>
+  </div>
+  <p class="smallprint">All element data in the 3D table is real. Valence is free and open-source — no sign-up required.</p>
+</footer>
+
+<script src="index.js" defer></script>
+</body>
+</html>
