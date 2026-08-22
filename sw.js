@@ -1,23 +1,23 @@
 /* Periodic Table PWA service worker */
-const CACHE = "periodic-3d-v9";
+const CACHE = "periodic-3d-v10";
 
 // App shell served from our own origin (relative to the SW scope)
 const CORE = [
   "./",
   "./index.html",
-  "./index.css",
-  "./index.js",
+  "./css/index.css",
+  "./js/index.js",
   "./table.html",
-  "./table.css",
-  "./table.js",
-  "./elements-data.js",
+  "./css/table.css",
+  "./js/table.js",
+  "./js/elements-data.js",
   "./manifest.json",
-  "./icon-192.png",
-  "./icon-512.png",
-  "./icon-maskable-512.png",
-  "./apple-touch-icon.png",
-  "./favicon.png",
-  "./favicon.ico"
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+  "./icons/icon-maskable-512.png",
+  "./icons/apple-touch-icon.png",
+  "./icons/favicon.png",
+  "./icons/favicon.ico"
 ];
 
 // Precache the app shell so it opens offline and qualifies for install.

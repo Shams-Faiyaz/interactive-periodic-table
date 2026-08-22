@@ -12,13 +12,18 @@ Two pages, one folder.
 
 ## Files
 
-- `index.html`, `index.css`, `index.js` — landing page
-- `table.html`, `table.css`, `table.js` — the 3D periodic table app
-- `elements-data.js` — the data for all 118 elements, loaded before `table.js`
-- `manifest.json` — PWA app definition (installing opens `table.html`)
-- `sw.js` — service worker (offline cache + install)
-- `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`,
-  `apple-touch-icon.png`, `favicon.png`, `favicon.ico` — icons
+```
+index.html, table.html      pages
+manifest.json, sw.js        PWA definition + service worker (stay at root — scope)
+css/index.css, css/table.css
+js/index.js, js/table.js, js/elements-data.js
+icons/                      icon-192.png, icon-512.png, icon-maskable-512.png,
+                             apple-touch-icon.png, favicon.png, favicon.ico
+```
+
+`manifest.json` and `sw.js` have to stay at the root: a service worker's cache
+scope defaults to the folder it's served from, so moving `sw.js` into a
+subfolder would stop it controlling the pages at the root.
 
 No build step, no npm, no dev server. The only outside code is three.js r128,
 tween.js 18.6.4, `CSS3DRenderer.js` and `OrbitControls.js`, loaded from a CDN
