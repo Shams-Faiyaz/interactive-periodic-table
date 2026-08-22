@@ -1,75 +1,26 @@
-# SETUP — get Valence online
+# SETUP — Valence, deployed
 
-One step per section. Do them in order. Nothing here needs Git on your computer.
+The project is live on GitHub Pages, deployed straight from the `main`
+branch of `github.com/Shams-Faiyaz/interactive-periodic-table`.
 
-## Before you start
+## Local preview
 
-Have all of these files in one folder, side by side:
+Double-clicking `index.html` opens it in a browser, but two things need a
+real HTTP server instead of `file://`: installing the app, and the service
+worker caching it for offline use. `.claude/launch.json` defines a
+`valence-static` config that runs `python3 -m http.server 8123` for that.
 
-`index.html` · `table.html` · `manifest.json` · `sw.js` · `icon-192.png` ·
-`icon-512.png` · `icon-maskable-512.png` · `apple-touch-icon.png` ·
-`favicon.png` · `favicon.ico` · `README.md` · `SETUP.md`
+## Publishing an update
 
-## Step 1 — look at it locally
+Push to `main`. GitHub Pages redeploys automatically — no manual upload step.
 
-Double-click `index.html`. It opens in your browser.
+The service worker fetches HTML network-first, so a changed page shows up
+immediately rather than staying stuck on an old cached copy. If `sw.js`
+itself changes, bump the `CACHE` name at the top of the file so old caches on
+returning visitors' devices get cleared.
 
-Two things will not work over `file://`, and that is normal: the app cannot install,
-and it will not cache for offline. Everything else works.
+## Install the app
 
-## Step 2 — make a GitHub repo
-
-1. Go to github.com and sign in.
-2. Top right **+** → **New repository**.
-3. Name it (for example `valence`). Set it **Public**. Do not tick "Add a README".
-4. **Create repository**.
-
-## Step 3 — upload the files
-
-1. On the new empty repo page, click **uploading an existing file**.
-2. Drag in every file from the list in "Before you start". All of them, at once.
-3. Scroll down → **Commit changes**.
-
-## Step 4 — turn on GitHub Pages
-
-1. In the repo, click **Settings**.
-2. Left sidebar → **Pages**.
-3. **Source**: *Deploy from a branch*.
-4. **Branch**: `main`, folder `/ (root)` → **Save**.
-
-## Step 5 — open the live site
-
-Wait about a minute, then open:
-
-`https://<your-username>.github.io/<repo-name>/`
-
-The landing page loads first. The **Open the 3D table** button goes to `table.html`.
-
-## Step 6 — test on a real phone
-
-Open the live address on your phone and check each of these:
-
-- Nav bar fits, nothing overflows sideways
-- The big element tile cycles through Na, O, Au, He, Cl, Fe
-- Course filter buttons switch the six cards
-- Tapping a lesson ticks it, and the electrons appear on the shell rings
-- Reload the page: your ticks are still there
-- Enrolment form: submitting with a blank name shows the red error
-- **Open the 3D table** → the table loads and you can drag to rotate
-- In the table: **⬇ Install app** appears, or on iPhone Share → Add to Home Screen
-
-## Step 7 — updating later
-
-Upload the changed file again and commit. The service worker fetches HTML from the
-network first, so a changed page shows up straight away rather than staying stuck
-on an old cached copy.
-
-If you ever change `sw.js` itself, bump the `CACHE` name at the top
-(`periodic-3d-v7` → `periodic-3d-v8`) so old caches get cleared.
-
-## Optional — make the enrolment form real
-
-The form in `index.html` validates and shows a success panel, but sends nothing.
-To make it send, use a free no-backend form service (Formspree and Web3Forms both
-have free tiers, no card). Give the `<form id="enrolForm">` an `action` and
-`method="POST"`, and remove the `ev.preventDefault()` line in the submit handler.
+- **Android (Chrome):** open the live site → **⬇ Install app** (or ⋮ → Install app).
+- **iPhone (Safari):** Share → **Add to Home Screen**.
+- **Desktop (Chrome/Edge):** install icon in the address bar.
