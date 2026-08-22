@@ -173,26 +173,37 @@ window.PT_ICONS = (function(){
     camera.position.z=3000;
     scene=new THREE.Scene();
 
-    ELEMENTS.forEach(e=>{
+    ELEMENTS.forEach((e,idx)=>{
       const el=document.createElement("div");
       el.className="element";
       el.tabIndex=0; el.setAttribute("role","button");
       el.setAttribute("aria-label",`${e.name}, symbol ${e.sym}, atomic number ${e.n}, ${e.cat}`);
       el.dataset.n=e.n; el.title=e.name;
       el.style.setProperty("--c",CATEGORY_COLORS[e.cat]||CATEGORY_COLORS.Unknown);
-      el.innerHTML=`<div class="catbar"></div><div class="wt">${e.block}</div><div class="number">${e.n}</div>
-        <div class="symbol">${e.sym}</div><div class="name">${e.name}</div><div class="mass">${(+e.mass).toFixed(2)}</div><div class="pval"></div>`;
-      el.addEventListener("click",ev=>{ev.stopPropagation();openDetail(e);});
+      // ADDED: --i staggers the idle "breathing" animation cheaply (set once, no per-frame JS)
+      el.style.setProperty("--i",idx%14);
+      // ADDED: contents live in a .tile-inner wrapper so tap/breathe scale effects can
+      // animate `transform` on a child without ever touching the CSS3D renderer's own
+      // per-frame transform writes on `.element` itself.
+      el.innerHTML=`<div class="tile-inner"><div class="catbar"></div><div class="wt">${e.block}</div><div class="number">${e.n}</div>
+        <div class="symbol">${e.sym}</div><div class="name">${e.name}</div><div class="mass">${(+e.mass).toFixed(2)}</div><div class="pval"></div></div>`;
+      // ADDED: tactile squash/bounce micro-interaction on selection
+      const tapFx=()=>{
+        if(reduceMotion) return;
+        el.classList.remove("tapped"); void el.offsetWidth; el.classList.add("tapped");
+      };
+      el.addEventListener("click",ev=>{ev.stopPropagation();tapFx();openDetail(e);});
       // Touch: OrbitControls treats a finger-down as a pan, which swallows the tap/click.
       // Detect a genuine tap (little movement, short time) and open the card ourselves.
       let _tx=0,_ty=0,_tt=0,_moved=false;
       el.addEventListener("touchstart",ev=>{ const t=ev.changedTouches[0]; _tx=t.clientX;_ty=t.clientY;_tt=Date.now();_moved=false; },{passive:true});
       el.addEventListener("touchmove",ev=>{ const t=ev.changedTouches[0]; if(Math.abs(t.clientX-_tx)>12||Math.abs(t.clientY-_ty)>12) _moved=true; },{passive:true});
-      el.addEventListener("touchend",ev=>{ if(!_moved && ev.touches.length===0 && Date.now()-_tt<500){ ev.preventDefault(); ev.stopPropagation(); openDetail(e); } },{passive:false});
+      el.addEventListener("touchend",ev=>{ if(!_moved && ev.touches.length===0 && Date.now()-_tt<500){ ev.preventDefault(); ev.stopPropagation(); tapFx(); openDetail(e); } },{passive:false});
       el.addEventListener("keydown",ev=>{
-        if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); ev.stopPropagation(); openDetail(e); return; }
+        if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); ev.stopPropagation(); tapFx(); openDetail(e); return; }
         if(curLayout==="table" && !overlay.classList.contains("show")) handleCardArrow(ev,e);
       });
+      el.addEventListener("animationend",ev=>{ if(ev.animationName==="fxTap") el.classList.remove("tapped"); });
       const obj=new THREE.CSS3DObject(el);
       obj.position.set(Math.random()*4000-2000,Math.random()*4000-2000,Math.random()*4000-2000);
       scene.add(obj); objects.push(obj); cards.push({el,data:e});
@@ -624,10 +635,14 @@ window.PT_ICONS = (function(){
       }
       render(); return;
     }
+    // ADDED: bouncy/elastic layout transitions — a mild spring overshoot (TWEEN.Easing.Back.Out)
+    // instead of plain Cubic.InOut, so switching Table/Sphere/Helix/Grid feels alive rather
+    // than mechanical. Camera keeps a gentler ease so the scene doesn't feel disorienting.
+    const layoutEasing=TWEEN.Easing.Back.Out;
     for(let i=0;i<objects.length;i++){
       const o=objects[i], t=arr[i];
       const d=dur*(0.92+Math.random()*0.16);   // tight, consistent stagger (cleaner)
-      new TWEEN.Tween(o.position).to({x:t.position.x,y:t.position.y,z:t.position.z},d).easing(TWEEN.Easing.Cubic.InOut).start();
+      new TWEEN.Tween(o.position).to({x:t.position.x,y:t.position.y,z:t.position.z},d).easing(layoutEasing).start();
       new TWEEN.Tween(o.rotation).to({x:t.rotation.x,y:t.rotation.y,z:t.rotation.z},d).easing(TWEEN.Easing.Cubic.InOut).start();
     }
     // glide the camera straight back to frame the new layout, re-centering it
@@ -635,8 +650,8 @@ window.PT_ICONS = (function(){
       const dir=camera.position.clone().sub(controls.target).normalize();
       const end=dir.multiplyScalar(camZ);
       new TWEEN.Tween(camera.position).to({x:end.x,y:end.y,z:end.z},dur*1.1)
-        .easing(TWEEN.Easing.Cubic.InOut).start();
-      new TWEEN.Tween(controls.target).to({x:0,y:0,z:0},dur*1.1).easing(TWEEN.Easing.Cubic.InOut).start();
+        .easing(TWEEN.Easing.Quadratic.Out).start();
+      new TWEEN.Tween(controls.target).to({x:0,y:0,z:0},dur*1.1).easing(TWEEN.Easing.Quadratic.Out).start();
     }
   }
 

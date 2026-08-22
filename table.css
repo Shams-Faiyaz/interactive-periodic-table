@@ -1,4 +1,10 @@
-  :root{ --bg:#0e1014; --text:#e9edf2; --bg1:#1b2130; --bg2:#0b0d11; --accent:#5ab0ff; --accent2:#93bdff; }
+  :root{ --bg:#0e1014; --text:#e9edf2; --bg1:#1b2130; --bg2:#0b0d11; --accent:#5ab0ff; --accent2:#93bdff;
+    /* ADDED: accent bridge to the Valence landing page's clay gradient (pink → orange → yellow).
+       Used sparingly as highlight-only accents — never as base background or category colour. */
+    --clay-grad:linear-gradient(100deg,#FF3D8B,#FF7A3D 55%,#FFD23F);
+    --clay-glow:#FF7A3D;
+    --r-clay-sm:14px; --r-clay-md:18px; --r-clay-lg:22px;
+  }
   *{box-sizing:border-box;}
   html,body{margin:0;height:100%;}
   html{overscroll-behavior:none;}
@@ -606,6 +612,98 @@
   #toast::before{
     content:"";width:8px;height:8px;border-radius:50%;flex:none;background:var(--accent);
     box-shadow:0 0 10px var(--accent);animation:fxRing 1.6s ease-in-out infinite;
+  }
+
+  /* ============================================================
+     ADDED — playful/smooth polish pass (Valence bridge)
+     Rounder, softer chrome on outer control bars/dropdowns only.
+     Never touches #container, the CSS3D scene, or .element's core
+     dark styling / category colours.
+     ============================================================ */
+
+  /* ---- rounder, softer control-bar chrome ---- */
+  .bar{border-radius:var(--r-clay-lg);
+    box-shadow:0 10px 34px rgba(0,0,0,.4), 0 1px 0 rgba(255,255,255,.04) inset;}
+  .bar button, .bar select, #search{border-radius:var(--r-clay-sm);}
+  .seg{border-radius:var(--r-clay-md);}
+  .seg button{border-radius:var(--r-clay-sm);}
+  .ddbtn{border-radius:var(--r-clay-sm);}
+  .ddmenu{border-radius:var(--r-clay-md);
+    box-shadow:0 16px 46px rgba(0,0,0,.55), 0 1px 0 rgba(255,255,255,.05) inset;}
+  .ddmenu label{border-radius:var(--r-clay-sm);}
+  .ddclear{border-radius:var(--r-clay-sm);}
+  #sortDir,#tempPreset{border-radius:999px;}
+  .chip{border-radius:999px;}
+  #muteBtn,#mMuteBtn{border-radius:50%;}
+  #mMuteBtn{border-radius:var(--r-clay-md);}
+  #mbar #mSearch{border-radius:var(--r-clay-md);}
+  #mbar select,#mbar #mOptionsBtn{border-radius:var(--r-clay-md);}
+  .msheetcard{border-radius:26px;}
+  #mHl label{border-radius:var(--r-clay-md);}
+  #mClear{border-radius:999px;}
+  #zoomctl{border-radius:30px;}
+  #tempBar{border-radius:999px;}
+  #caption{border-radius:999px;}
+  #legend{border-radius:var(--r-clay-lg);}
+  #layernav{border-radius:999px;}
+  .gp{border-radius:9px;}
+
+  /* ---- accent bridge: gradient highlights only, base dark theme untouched ---- */
+  #search:focus,#mbar #mSearch:focus{
+    border-color:transparent;
+    box-shadow:0 0 0 2px var(--page,#0e1014), 0 0 0 4px transparent,
+      0 0 0 3px color-mix(in srgb,var(--clay-glow) 55%,transparent),
+      0 0 18px color-mix(in srgb,var(--clay-glow) 45%,transparent);
+    outline:none;
+  }
+  .seg button.active,.bar button.active,.chip.active,.ddbtn.on,.gp.active{
+    background-image:var(--clay-grad)!important;
+    color:#1a0f10!important;
+    box-shadow:0 4px 16px color-mix(in srgb,var(--clay-glow) 55%,transparent),0 1px 5px rgba(0,0,0,.45)!important;
+  }
+  .bar button.active::after,.chip.active::after{
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--clay-glow) 70%,transparent),
+               0 0 16px color-mix(in srgb,var(--clay-glow) 55%,transparent);
+  }
+  #legendRows .row:hover .sw,#legendRows .row.active .sw{
+    box-shadow:0 0 0 2px color-mix(in srgb,var(--clay-glow) 55%,transparent),0 0 14px currentColor;
+  }
+
+  /* ---- micro-interaction: tactile squash/bounce on card selection ----
+     Animates the .tile-inner wrapper's transform, never .element's own
+     transform (the CSS3D renderer writes that every frame). */
+  .element .tile-inner{position:relative;width:100%;height:100%;transform-origin:50% 50%;}
+  .element.tapped .tile-inner{animation:fxTap .46s cubic-bezier(.34,1.56,.64,1) both;}
+  @keyframes fxTap{
+    0%  {transform:scale(1);}
+    30% {transform:scale(.90,.94);}
+    55% {transform:scale(1.07,1.04);}
+    75% {transform:scale(.98,1.01);}
+    100%{transform:scale(1);}
+  }
+
+  /* ---- idle "breathing" on cards at rest: subtle, slow, cheap ----
+     A single shared keyframe, staggered per-card with --i (set once in JS,
+     no per-frame cost). Opacity/box-shadow/scale only — scale lives on the
+     inner wrapper so `.element`'s own transform is never touched. */
+  @media (prefers-reduced-motion:no-preference){
+    .element{ animation:fxBreatheGlow 7.5s ease-in-out infinite; animation-delay:calc(var(--i,0) * -0.5s); }
+    .element .tile-inner{ animation:fxBreatheScale 7.5s ease-in-out infinite; animation-delay:calc(var(--i,0) * -0.5s); }
+    .element:hover,.element.match,.element.dim,.element.layerdim,.element.gridhide,.element.tapped{
+      animation-play-state:paused;
+    }
+    .element:hover .tile-inner,.element.match .tile-inner,.element.dim .tile-inner,
+    .element.layerdim .tile-inner,.element.gridhide .tile-inner,.element.tapped .tile-inner{
+      animation-play-state:paused;
+    }
+  }
+  @keyframes fxBreatheGlow{
+    0%,100%{ box-shadow:0 3px 12px rgba(0,0,0,.5), 0 0 14px color-mix(in srgb,var(--c) 30%,transparent), inset 0 1px 0 rgba(255,255,255,.08); }
+    50%    { box-shadow:0 3px 14px rgba(0,0,0,.5), 0 0 22px color-mix(in srgb,var(--c) 46%,transparent), inset 0 1px 0 rgba(255,255,255,.1); }
+  }
+  @keyframes fxBreatheScale{
+    0%,100%{ transform:scale(1); }
+    50%    { transform:scale(1.015); }
   }
 
   /* ---- respect the OS setting: kill every added animation ---- */
