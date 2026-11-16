@@ -1,5 +1,5 @@
 /* Periodic Table PWA service worker */
-const CACHE = "periodic-3d-v10";
+const CACHE = "periodic-3d-v11";
 
 // App shell served from our own origin (relative to the SW scope)
 const CORE = [
@@ -62,27 +62,33 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // Other same-origin assets (icons, manifest): cache-first, refresh in background.
+  // Other same-origin assets (css, js, icons, manifest): stale-while-revalidate.
+  // Serve the cached copy at once if there is one, and refresh the cache in the background.
   if (sameOrigin) {
     e.respondWith(
-      caches.match(req).then((hit) =>
-        hit ||
-        fetch(req).then((res) => {
+      caches.match(req).then((hit) => {
+        const net = fetch(req).then((res) => {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
           return res;
-        })
-      )
+        });
+        if (hit) {
+          e.waitUntil(net.catch(() => {}));
+          return hit;
+        }
+        return net;
+      })
     );
     return;
   }
 
-  // Cross-origin (three.js CDN, fonts): network-first, cache for offline.
+  // Cross-origin (three.js CDN, fonts): URLs are version-pinned, so cache-first,
+  // network fallback that also stores the response for offline.
   e.respondWith(
-    fetch(req).then((res) => {
+    caches.match(req).then((hit) => hit || fetch(req).then((res) => {
       const copy = res.clone();
       caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
       return res;
-    }).catch(() => caches.match(req))
+    }))
   );
 });

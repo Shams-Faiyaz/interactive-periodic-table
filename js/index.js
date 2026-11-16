@@ -28,7 +28,7 @@
   }
   paintHero(0);
   if(!reduce){
-    setInterval(()=>{ heroI = (heroI+1) % HERO.length; paintHero(heroI); }, 3200);
+    setInterval(()=>{ if(document.hidden) return; heroI = (heroI+1) % HERO.length; paintHero(heroI); }, 3200);
   }
 
   /* =========================================================

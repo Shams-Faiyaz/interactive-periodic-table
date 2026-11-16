@@ -36,7 +36,7 @@
   .bar{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;pointer-events:auto;}
   .bar button, .bar select, #search{
     background:#20242e;color:#dfe4ec;border:1px solid rgba(255,255,255,.14);
-    border-radius:7px;padding:5px 11px;font-size:.75rem;letter-spacing:.4px;cursor:pointer;transition:.18s;
+    border-radius:7px;padding:5px 11px;font-size:.75rem;letter-spacing:.4px;cursor:pointer;transition:background-color .18s ease,color .18s ease,border-color .18s ease,box-shadow .18s ease,opacity .18s ease,transform .18s ease;
   }
   .bar button:hover, .bar select:hover{background:#2c313d;}
   .bar button.active{background:#eef1f6;color:#12151b;border-color:#eef1f6;}
@@ -44,7 +44,7 @@
   .chipgrp{display:flex;gap:5px;pointer-events:auto;}
   .chipsep{width:1px;align-self:stretch;background:rgba(255,255,255,.12);margin:2px 4px;pointer-events:none;}
   .chip{background:#20242e;color:#cfd6e2;border:1px solid rgba(255,255,255,.14);border-radius:20px;
-    padding:5px 12px;font-size:.72rem;letter-spacing:.3px;cursor:pointer;transition:.16s;pointer-events:auto;}
+    padding:5px 12px;font-size:.72rem;letter-spacing:.3px;cursor:pointer;transition:background-color .16s ease,color .16s ease,border-color .16s ease,box-shadow .16s ease,opacity .16s ease,transform .16s ease;pointer-events:auto;}
   .chip:hover{background:#2c313d;}
   .chip.active{background:#eef1f6;color:#12151b;border-color:#eef1f6;box-shadow:0 0 12px rgba(255,255,255,.25);}
   .chip.clearchip{opacity:.7;} .chip.clearchip:hover{opacity:1;color:#fff;background:#3a2530;border-color:#7a3a4a;}
@@ -71,7 +71,7 @@
   /* SFX mute toggle */
   #muteBtn,#mMuteBtn{background:#20242e;color:#dfe4ec;border:1px solid rgba(255,255,255,.14);
     border-radius:50%;width:32px;height:32px;padding:0;cursor:pointer;display:inline-flex;
-    align-items:center;justify-content:center;transition:.18s;pointer-events:auto;}
+    align-items:center;justify-content:center;transition:background-color .18s ease,color .18s ease,border-color .18s ease,box-shadow .18s ease,opacity .18s ease,transform .18s ease;pointer-events:auto;}
   #muteBtn:hover,#mMuteBtn:hover{background:#2c313d;}
   #muteBtn.muted,#mMuteBtn.muted{color:rgba(255,255,255,.4);}
   #muteBtn .ico,#mMuteBtn .ico{width:16px;height:16px;}
@@ -81,7 +81,7 @@
   #groupBar{position:absolute;z-index:5;display:none;gap:3px;justify-content:center;flex-wrap:wrap;left:56px;right:56px;pointer-events:none;}
   #periodBar{position:absolute;z-index:5;display:none;flex-direction:column;gap:3px;left:10px;pointer-events:none;}
   .gp{pointer-events:auto;min-width:25px;height:23px;padding:0 4px;font-size:.64rem;border-radius:6px;cursor:pointer;
-    background:rgba(20,24,32,.62);color:#c8d2e0;border:1px solid rgba(255,255,255,.12);transition:.15s;}
+    background:rgba(20,24,32,.62);color:#c8d2e0;border:1px solid rgba(255,255,255,.12);transition:background-color .15s ease,color .15s ease,border-color .15s ease,box-shadow .15s ease,opacity .15s ease,transform .15s ease;}
   .gp:hover{background:rgba(40,46,58,.85);}
   .gp.active{background:#eef1f6;color:#12151b;border-color:#eef1f6;box-shadow:0 0 12px rgba(255,255,255,.3);}
   .gp.gpreset{color:#ffb3c4;border-color:#6a3345;background:rgba(40,24,30,.6);font-size:.8rem;}
@@ -125,7 +125,7 @@
       color-mix(in srgb,var(--c) 13%,rgba(9,11,15,.62));
     text-align:center;cursor:pointer;overflow:hidden;
     /* NOTE: never transition `transform` — the CSS3D renderer writes it every frame */
-    transition:box-shadow .35s ease,border-color .35s ease,opacity .4s ease,filter .4s ease;
+    transition:box-shadow .35s ease,border-color .35s ease,opacity .4s ease;
     backface-visibility:hidden;
   }
   .element:hover{box-shadow:0 0 26px color-mix(in srgb,var(--c) 95%,transparent), inset 0 1px 0 rgba(255,255,255,.14);border-color:color-mix(in srgb,var(--c) 98%,transparent);}
@@ -266,7 +266,7 @@
   #layernav .arrow:hover{background:#2c313d;}
   #layernav .layers{display:flex;gap:6px;}
   #layernav .lyr{min-width:70px;padding:5px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.14);
-    background:#20242e;cursor:pointer;text-align:center;transition:.18s;}
+    background:#20242e;cursor:pointer;text-align:center;transition:background-color .18s ease,color .18s ease,border-color .18s ease,box-shadow .18s ease,opacity .18s ease,transform .18s ease;}
   #layernav .lyr:hover{background:#2c313d;}
   #layernav .lyr.active{background:color-mix(in srgb,var(--lc) 32%,#20242e);border-color:color-mix(in srgb,var(--lc) 80%,transparent);box-shadow:0 0 14px color-mix(in srgb,var(--lc) 45%,transparent);}
   #layernav .lyr b{display:block;font-size:.9rem;color:#fff;}
@@ -445,7 +445,7 @@
   #hint{font-family:'Roboto Mono',monospace;font-size:.6rem;letter-spacing:.3px;}
 
   /* smoother, meaningful feedback when filtering/searching (transform untouched) */
-  .element{transition:box-shadow .3s ease,border-color .3s ease,opacity .32s ease,filter .32s ease;}
+  .element{transition:box-shadow .3s ease,border-color .3s ease,opacity .32s ease;}  /* PERF: no filter transition on 118 tiles */
 
 
   /* ============================================================
@@ -465,20 +465,22 @@
     animation:fxDrift 34s ease-in-out infinite alternate;
   }
   @keyframes fxDrift{
-    0%  {transform:translate3d(-3%,-2%,0) scale(1);}
-    50% {transform:translate3d(2%,3%,0) scale(1.08);}
-    100%{transform:translate3d(4%,-3%,0) scale(1.03);}
+    /* PERF: translate only — scaling a 70px-blurred layer re-rasterised it */
+    0%  {transform:translate3d(-3%,-2%,0);}
+    50% {transform:translate3d(2%,3%,0);}
+    100%{transform:translate3d(4%,-3%,0);}
   }
 
   /* ---- fine film grain so the flat gradients stop banding ---- */
   #fxGrain{
-    position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+    position:fixed;inset:-40px;z-index:2;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='.6'/></svg>");
     animation:fxGrainShift 6s steps(4) infinite;
   }
   @keyframes fxGrainShift{
-    0%{background-position:0 0;} 25%{background-position:-40px 20px;}
-    50%{background-position:30px -30px;} 75%{background-position:-20px -40px;} 100%{background-position:0 0;}
+    /* PERF: transform instead of background-position (no repaint) */
+    0%{transform:translate(0,0);} 25%{transform:translate(-40px,20px);}
+    50%{transform:translate(30px,-30px);} 75%{transform:translate(-20px,-40px);} 100%{transform:translate(0,0);}
   }
 
   /* ---- shared icon sizing ---- */
@@ -539,7 +541,7 @@
   }
   .element:hover .catbar{animation:fxBarSlide 1.4s linear infinite;}
   @keyframes fxBarSlide{to{background-position:220% 0;}}
-  .element.match{animation:fxMatch 1.5s ease-in-out infinite;}
+  .element.match{animation:fxMatch 1.5s ease-in-out 3;}  /* PERF: was infinite — an 84px box-shadow repaint per matched tile, forever */
   @keyframes fxMatch{
     0%,100%{box-shadow:0 0 26px #fff,0 0 52px color-mix(in srgb,var(--c) 90%,transparent);}
     50%    {box-shadow:0 0 40px #fff,0 0 84px color-mix(in srgb,var(--c) 98%,transparent);}
@@ -550,7 +552,7 @@
   #zoomctl button,#layernav .arrow,#layernav .lyr:not(.active),.chip:not(.active),
   #mbar select,#mbar #mOptionsBtn,#mbar button{
     background-image:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.02));
-    backdrop-filter:blur(8px) saturate(1.15);
+    /* PERF: per-button backdrop-filter removed — dozens of blur layers; the bar behind them already blurs */
     transition:background .18s ease,border-color .18s ease,box-shadow .22s ease,transform .18s cubic-bezier(.34,1.4,.64,1);
   }
   .bar button:not(.active):hover,.ddbtn:not(.on):hover,#sortDir:hover,#tempPreset:hover,
@@ -576,11 +578,11 @@
   #resetView,#installBtn{backdrop-filter:blur(10px) saturate(1.2);}
   #installBtn{position:fixed;overflow:hidden;}
   #installBtn::after{
-    content:"";position:absolute;top:0;left:-60%;width:45%;height:100%;pointer-events:none;
+    content:"";position:absolute;top:0;left:0;width:45%;height:100%;pointer-events:none;transform:translateX(-134%);
     background:linear-gradient(100deg,transparent,rgba(255,255,255,.42),transparent);
     animation:fxInstallSweep 3.6s ease-in-out infinite;
   }
-  @keyframes fxInstallSweep{0%,62%{left:-60%;}100%{left:120%;}}
+  @keyframes fxInstallSweep{0%,62%{transform:translateX(-134%);}100%{transform:translateX(267%);}}  /* PERF: transform, not left */
 
   #sphereToggle{transition:background .2s ease,box-shadow .25s ease,transform .2s ease;}
   #sphereToggle:hover{box-shadow:0 0 20px color-mix(in srgb,var(--accent) 45%,transparent);}
@@ -687,7 +689,8 @@
      no per-frame cost). Opacity/box-shadow/scale only — scale lives on the
      inner wrapper so `.element`'s own transform is never touched. */
   @media (prefers-reduced-motion:no-preference){
-    .element{ animation:fxBreatheGlow 7.5s ease-in-out infinite; animation-delay:calc(var(--i,0) * -0.5s); }
+    /* PERF: the glow half of the breathing animated box-shadow on all 118 tiles, which forced
+       a style recalc + repaint of every tile every frame. Only the transform half remains. */
     .element .tile-inner{ animation:fxBreatheScale 7.5s ease-in-out infinite; animation-delay:calc(var(--i,0) * -0.5s); }
     .element:hover,.element.match,.element.dim,.element.layerdim,.element.gridhide,.element.tapped{
       animation-play-state:paused;
@@ -713,5 +716,17 @@
     #dSym::before,#toast::before{animation:none !important;}
     #fxAurora{opacity:.35;}
     .element.match{box-shadow:0 0 32px #fff,0 0 60px color-mix(in srgb,var(--c) 95%,transparent);}
+  }
+  /* ---- PERF: pause ambient animation while the scene is moving or the detail card covers it ----
+     body.fx-busy is set by animate() during layout tweens / camera motion;
+     body.detail-open is set while the element card is open. */
+  body.fx-busy .element .tile-inner,body.detail-open .element .tile-inner,
+  body.fx-busy #atomMark .spin,body.detail-open #atomMark .spin,
+  body.detail-open #fxAurora,body.detail-open #fxGrain,
+  body.detail-open .bar button.active::after,body.detail-open .chip.active::after,
+  body.detail-open #installBtn::after{animation-play-state:paused;}
+  @media (prefers-reduced-motion:reduce){
+    .element{transition:none !important;}
+    .element .tile-inner,.element.tapped .tile-inner{animation:none !important;}
   }
 </style>

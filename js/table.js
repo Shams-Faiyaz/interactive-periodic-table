@@ -131,7 +131,8 @@ window.PT_ICONS = (function(){
     return heat((v-lo)/(hi-lo||1));
   }
   function applyColors(){
-    cards.forEach(c=>c.el.style.setProperty("--c",colorFor(c.data)));
+    // PERF: only touch tiles whose colour actually changed
+    cards.forEach(c=>{ const col=colorFor(c.data); if(c._c!==col){ c._c=col; c.el.style.setProperty("--c",col); } });
     buildLegend();
   }
 
@@ -318,12 +319,16 @@ window.PT_ICONS = (function(){
 
     buildLegend();
     setCaption("table");
+    // FIX: a later CSS rule gives #sphereToggle display:inline-flex, so it showed in table view
+    // on first load and covered Np/Pu/Am/Cm. setLayout() only hides it after the first switch.
+    document.getElementById("sphereToggle").style.display="none";
     layout();                                  // size viewport + compute fit distances
     camera.position.set(0,0,fitDist.table);    // start framed on the table
     controls.update();
     transform(targets.table,1800,fitDist.table); // gentle fly-in from scattered start
     syncZoomSlider();
-    window.addEventListener("resize",onResize);
+    // PERF: at most one re-layout per frame while the window is being resized
+    let _rz=0; window.addEventListener("resize",()=>{ cancelAnimationFrame(_rz); _rz=requestAnimationFrame(onResize); });
     // Rotating a phone/tablet fires orientationchange; the viewport size settles a beat later,
     // so re-run the layout after a short delay so nothing ends up mis-framed.
     window.addEventListener("orientationchange",()=>{ setTimeout(onResize,250); setTimeout(onResize,600); });
@@ -627,6 +632,7 @@ window.PT_ICONS = (function(){
 
   function transform(arr,dur,camZ){
     TWEEN.removeAll();
+    if(dur<=0 && typeof camZ!=="number"){ placeInstant(arr); return; }   // PERF: no zero-length tweens (resize in grid view)
     if(reduceMotion){
       placeInstant(arr);
       if(typeof camZ==="number"){
@@ -738,8 +744,21 @@ window.PT_ICONS = (function(){
       mP.addEventListener("change",()=>setGPfromSelect("period",mP.value,"#periodBar")); }
   }
 
-  function animate(){ requestAnimationFrame(animate); if(document.hidden) return; TWEEN.update(); controls.update(); render(); if(bohr.active) renderBohr(); if(shapes.active) renderShapes(); }
-  function render(){ renderer.render(scene,camera); }
+  // PERF: render on demand. The CSS3D scene is only re-rendered when a tween is running,
+  // the camera is moving/damping, or something called render(). Nothing is rendered behind
+  // the open detail card. body.fx-busy pauses the idle CSS animations while the scene moves.
+  let _dirty=true, _busyT=0, _busyOn=false;
+  function animate(t){
+    requestAnimationFrame(animate); if(document.hidden) return;
+    t=t||performance.now();
+    const tweening=TWEEN.getAll().length>0; TWEEN.update();
+    const moved=controls.update();
+    if(tweening||moved||_dirty){ _busyT=t; if(!_busyOn){ _busyOn=true; document.body.classList.add("fx-busy"); } }
+    else if(_busyOn && t-_busyT>400){ _busyOn=false; document.body.classList.remove("fx-busy"); syncZoomSlider(); }   // slider follows the settled camera
+    if(!overlay.classList.contains("show") && (tweening||moved||_dirty)){ renderer.render(scene,camera); _dirty=false; }
+    if(bohr.active) renderBohr(); if(shapes.active) renderShapes();
+  }
+  function render(){ _dirty=true; }
 
   /* ================= DETAIL OVERLAY ================= */
   const overlay=document.getElementById("overlay");
@@ -774,7 +793,7 @@ window.PT_ICONS = (function(){
     document.getElementById("dBadge").textContent=e.cat;
     buildOrbital(e);
     buildData(e);
-    overlay.classList.add("show");
+    overlay.classList.add("show"); document.body.classList.add("detail-open");
     switchTab("bohr");
     buildBohr(e);
     const idx=ELEMENTS.findIndex(x=>x.n===e.n);
@@ -785,7 +804,8 @@ window.PT_ICONS = (function(){
     const cb=document.getElementById("close"); if(cb) cb.focus();
   }
   function closeDetail(){
-    overlay.classList.remove("show"); bohr.active=false; shapes.active=false;
+    overlay.classList.remove("show"); document.body.classList.remove("detail-open"); bohr.active=false; shapes.active=false;
+    _dirty=true;
     if(location.hash) history.replaceState(null,"",location.pathname+location.search);
     const el=lastFocus||document.getElementById("search");
     if(el && el.focus){ try{ el.focus(); }catch(_){} }
@@ -824,7 +844,7 @@ window.PT_ICONS = (function(){
     if(!bohr.renderer) return;
     const wrap=document.getElementById("bohrWrap");
     const w=wrap.clientWidth,h=wrap.clientHeight;
-    bohr.renderer.setPixelRatio(window.devicePixelRatio);
+    bohr.renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));   // PERF: cap (3x phones drew 9x pixels)
     bohr.renderer.setSize(w,h,false);
     bohr.camera.aspect=w/h; bohr.camera.updateProjectionMatrix();
   }
@@ -853,6 +873,9 @@ window.PT_ICONS = (function(){
       new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.14})));
 
     const is2D=(bohr.mode==="2d");
+    // PERF: one shared geometry + material for every electron (was one of each per electron)
+    const eGeo=new THREE.SphereGeometry(eSize,18,18);
+    const eMat=new THREE.MeshStandardMaterial({color:0xbfefff,emissive:0x33aadd,emissiveIntensity:.9,roughness:.4});
     shells.forEach((count,si)=>{
       const r=shellR(si), tilt=is2D?0:si*0.22;
       const ring=new THREE.Mesh(new THREE.TorusGeometry(r,is2D?0.03:0.018,8,120),
@@ -862,8 +885,7 @@ window.PT_ICONS = (function(){
       const eg=new THREE.Group(); if(!is2D) eg.rotation.x=tilt;
       for(let k=0;k<count;k++){
         const a=(k/count)*Math.PI*2;
-        const em=new THREE.Mesh(new THREE.SphereGeometry(eSize,18,18),
-          new THREE.MeshStandardMaterial({color:0xbfefff,emissive:0x33aadd,emissiveIntensity:.9,roughness:.4}));
+        const em=new THREE.Mesh(eGeo,eMat);
         if(is2D) em.position.set(Math.cos(a)*r,Math.sin(a)*r,0);
         else     em.position.set(Math.cos(a)*r,0,Math.sin(a)*r);
         eg.add(em);
@@ -915,7 +937,7 @@ window.PT_ICONS = (function(){
   function sizeShapes(){
     if(!shapes.renderer) return;
     const wrap=document.getElementById("shapesWrap"), w=wrap.clientWidth,h=wrap.clientHeight;
-    shapes.renderer.setPixelRatio(window.devicePixelRatio);
+    shapes.renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
     shapes.renderer.setSize(w,h,false);
     shapes.camera.aspect=w/h; shapes.camera.updateProjectionMatrix();
   }
@@ -1081,7 +1103,7 @@ window.PT_ICONS = (function(){
   /* ---------- ambient VFX: nebula + parallax starfield + shooting stars ---------- */
   (function starfield(){
     const cv=document.getElementById("bg"), cx=cv.getContext("2d");
-    let stars=[], nebula=[], shots=[], W=0, H=0, dpr=Math.min(2,window.devicePixelRatio||1);
+    let stars=[], nebula=[], shots=[], W=0, H=0, dpr=Math.min(1.5,window.devicePixelRatio||1);   // PERF: 1.5 cap
     const NEB_COLORS=[[80,120,255],[150,90,255],[40,180,200],[255,90,160]];
 
     function resize(){
@@ -1093,28 +1115,34 @@ window.PT_ICONS = (function(){
         const depth=Math.random();            // 0 far … 1 near (parallax + size)
         return {x:Math.random()*W,y:Math.random()*H,z:depth,
           r:depth*1.6+0.25, base:depth*0.5+0.2,
-          tw:Math.random()*0.03+0.004, ph:Math.random()*6.28,
-          vx:(depth*0.12+0.02)*(Math.random()<.5?-1:1)};
+          tw:(Math.random()*0.03+0.004)*2, ph:Math.random()*6.28,
+          vx:(depth*0.12+0.02)*2*(Math.random()<.5?-1:1)};   // PERF: x2 per step, drawn at ~30fps = same speed
       });
       nebula=Array.from({length:5},(_,i)=>({
         x:Math.random()*W, y:Math.random()*H,
         r:Math.max(W,H)*(0.28+Math.random()*0.28),
         c:THEME_NEBULA[i%THEME_NEBULA.length],
-        vx:(Math.random()-.5)*0.06, vy:(Math.random()-.5)*0.05,
+        vx:(Math.random()-.5)*0.12, vy:(Math.random()-.5)*0.10,
         ph:Math.random()*6.28
       }));
     }
     function spawnShot(){
       const y=Math.random()*H*0.5;
-      shots.push({x:-60,y,vx:7+Math.random()*5,vy:2+Math.random()*2,life:1});
+      shots.push({x:-60,y,vx:(7+Math.random()*5)*2,vy:(2+Math.random()*2)*2,life:1});
     }
-    let last=0;
+    let last=0, _lastDraw=0;
     function draw(t){
+      // PERF: ~30fps, and nothing at all while the tab is hidden or the detail card covers the sky
+      if(!reduceMotion){
+        requestAnimationFrame(draw);
+        if(document.hidden || overlay.classList.contains("show") || t-_lastDraw<30) return;
+        _lastDraw=t;
+      }
       cx.clearRect(0,0,W,H);
       // nebula clouds (screen-blend glow)
       cx.globalCompositeOperation="lighter";
       for(const nb of nebula){
-        nb.x+=nb.vx; nb.y+=nb.vy; nb.ph+=0.004;
+        nb.x+=nb.vx; nb.y+=nb.vy; nb.ph+=0.008;
         if(nb.x<-nb.r)nb.x=W+nb.r; if(nb.x>W+nb.r)nb.x=-nb.r;
         if(nb.y<-nb.r)nb.y=H+nb.r; if(nb.y>H+nb.r)nb.y=-nb.r;
         const a=0.05+Math.sin(nb.ph)*0.02;
@@ -1133,18 +1161,18 @@ window.PT_ICONS = (function(){
       }
       // shooting stars
       for(let i=shots.length-1;i>=0;i--){
-        const sh=shots[i]; sh.x+=sh.vx; sh.y+=sh.vy; sh.life-=0.012;
-        const g=cx.createLinearGradient(sh.x,sh.y,sh.x-sh.vx*9,sh.y-sh.vy*9);
+        const sh=shots[i]; sh.x+=sh.vx; sh.y+=sh.vy; sh.life-=0.024;
+        const g=cx.createLinearGradient(sh.x,sh.y,sh.x-sh.vx*4.5,sh.y-sh.vy*4.5);
         g.addColorStop(0,`rgba(255,255,255,${sh.life})`); g.addColorStop(1,"rgba(255,255,255,0)");
-        cx.strokeStyle=g; cx.lineWidth=2; cx.beginPath(); cx.moveTo(sh.x,sh.y); cx.lineTo(sh.x-sh.vx*9,sh.y-sh.vy*9); cx.stroke();
+        cx.strokeStyle=g; cx.lineWidth=2; cx.beginPath(); cx.moveTo(sh.x,sh.y); cx.lineTo(sh.x-sh.vx*4.5,sh.y-sh.vy*4.5); cx.stroke();
         if(sh.life<=0||sh.x>W+80) shots.splice(i,1);
       }
       cx.globalCompositeOperation="source-over";
-      if(t-last>2600 && Math.random()<0.5){ spawnShot(); last=t; }
-      if(!reduceMotion) requestAnimationFrame(draw);
+      if(t-last>2600 && Math.random()<0.25){ spawnShot(); last=t; }
     }
     window.__applyNebula=()=>{ nebula.forEach((nb,i)=>{ nb.c=THEME_NEBULA[i%THEME_NEBULA.length]; }); };
-    addEventListener("resize",resize); resize(); if(reduceMotion){ draw(0); } else { requestAnimationFrame(draw); }
+    let _srz=0; addEventListener("resize",()=>{ clearTimeout(_srz); _srz=setTimeout(resize,150); }); resize();   // PERF: debounced
+    if(reduceMotion){ draw(0); } else { requestAnimationFrame(draw); }
   })();
 
 
@@ -1180,8 +1208,9 @@ window.PT_ICONS = (function(){
     const sl=document.getElementById("tempSlider"), lbl=document.getElementById("tempVal");
     if(!sl) return;
     lbl.textContent=fmtTemp(tempK);
+    let _tq=false;   // PERF: recolour at most once per frame while dragging
     sl.addEventListener("input",()=>{ tempK=+sl.value; lbl.textContent=fmtTemp(tempK);
-      if(colorMode==="phase"){ applyColors(); phaseCaption(); } });
+      if(colorMode==="phase" && !_tq){ _tq=true; requestAnimationFrame(()=>{ _tq=false; applyColors(); phaseCaption(); }); } });
     const pr=document.getElementById("tempPreset");
     if(pr) pr.addEventListener("click",()=>{ sl.value=298; sl.dispatchEvent(new Event("input")); });
   })();
@@ -1308,7 +1337,8 @@ window.PT_ICONS = (function(){
   // keep the group/period bars clear of the caption when it grows to 2 lines
   try{
     const _cap=document.getElementById("caption"); let _capH=-1;
-    new MutationObserver(()=>{ const h=_cap.offsetHeight; if(h!==_capH){ _capH=h; layout(); } })
+    let _capQ=false;   // PERF: read layout once per frame, not inside the mutation callback
+    new MutationObserver(()=>{ if(_capQ) return; _capQ=true; requestAnimationFrame(()=>{ _capQ=false; const h=_cap.offsetHeight; if(h!==_capH){ _capH=h; layout(); } }); })
       .observe(_cap,{childList:true,characterData:true,subtree:true});
   }catch(_){}
   openFromHash();
