@@ -164,9 +164,9 @@ All numbers come from headless Brave on this Mac. They were not measured on a re
 
 ---
 
-# Phase 2 — smooth transitions, WebGL tiles, performance mode (branch `webgl-tiles`)
+# Phase 2 — smooth transitions, WebGL tiles, performance mode
 
-Status: built and tested locally, pushed as a preview branch. **Not on the live site yet.** It goes to `main` only after it has been tried on a real screen.
+Status: **live.** Merged to `main` as commit `87db5ca` and deployed on 17 Nov 2026. All 14 changed files on the live site are byte-identical to the commit, and the full test (118 tiles, four views, search, keyboard, phone size, reduced motion) passes on the live address with no console errors.
 
 ## What changed
 
