@@ -11,6 +11,7 @@ const CORE = [
   "./css/table.css",
   "./js/icons.js",
   "./js/core.js",
+  "./js/perf.js",
   "./js/tiles-gl.js",
   "./js/scene.js",
   "./js/controls.js",

@@ -9,15 +9,14 @@
   function applyFilters(){
     activeCat=null; document.querySelectorAll("#legendRows .row").forEach(r=>r.classList.remove("off"));
     const on=anyFilter();
-    cards.forEach(c=>{
+    cards.forEach((c,i)=>{
       const e=c.data;
       const m = (filters.type.size?filters.type.has(elemType(e)):true)
              && (filters.state.size?filters.state.has(elemState(e)):true)
              && (filters.block.size?filters.block.has(e.block):true)
              && (filters.group.size?filters.group.has(String(elemGroup(e))):true)
              && (filters.period.size?filters.period.has(String(e.period)):true);
-      c.el.classList.toggle("dim",on && !m);
-      c.el.classList.toggle("match",on && m);
+      Tiles.setState(i,on && !m,on && m);
     });
     updateHlCount();
     render();
@@ -31,7 +30,7 @@
     Object.values(filters).forEach(s=>s.clear());
     document.querySelectorAll("#hlMenu input[type=checkbox]").forEach(cb=>cb.checked=false);
     document.querySelectorAll("#groupBar .gp,#periodBar .gp").forEach(b=>b.classList.remove("active"));
-    cards.forEach(c=>c.el.classList.remove("dim","match"));
+    cards.forEach((c,i)=>Tiles.setState(i,false,false));
     updateHlCount(); render();
   }
   // group (top) + period (side) selector strips
@@ -64,12 +63,11 @@
 
   function applySearch(q){
     activeCat=null; document.querySelectorAll("#legendRows .row").forEach(r=>r.classList.remove("off"));
-    if(!q){ anyFilter()?applyFilters():cards.forEach(c=>c.el.classList.remove("dim","match")); render(); return; }
-    cards.forEach(c=>{
+    if(!q){ anyFilter()?applyFilters():cards.forEach((c,i)=>Tiles.setState(i,false,false)); render(); return; }
+    cards.forEach((c,i)=>{
       const e=c.data;
       const hit=e.name.toLowerCase().startsWith(q)||e.sym.toLowerCase()===q||e.sym.toLowerCase().startsWith(q)||String(e.n)===q;
-      c.el.classList.toggle("dim",!hit);
-      c.el.classList.toggle("match",hit);
+      Tiles.setState(i,!hit,hit);
     });
     render();
   }
@@ -80,11 +78,11 @@
     const rows=document.querySelectorAll("#legendRows .row");
     if(activeCat===cat){
       activeCat=null; rows.forEach(r=>r.classList.remove("off"));
-      cards.forEach(c=>c.el.classList.remove("dim","match")); render(); return;
+      cards.forEach((c,i)=>Tiles.setState(i,false,false)); render(); return;
     }
     activeCat=cat;
     rows.forEach(r=>r.classList.toggle("off",r.dataset.cat!==cat));
-    cards.forEach(c=>{ const on=c.data.cat===cat; c.el.classList.toggle("dim",!on); c.el.classList.toggle("match",on); });
+    cards.forEach((c,i)=>{ const on=c.data.cat===cat; Tiles.setState(i,!on,on); });
     render();
   }
 
@@ -145,6 +143,10 @@
       document.querySelectorAll("#mHl input").forEach(c=>c.checked=false);
       const mG=$("mGroup"), mP=$("mPeriod"); if(mG)mG.value="all"; if(mP)mP.value="all";
     });
+    // effects level (performance mode) — same options as the desktop menu
+    const fOrig=$("fxSel");
+    if(fOrig && $("mFxWrap")){ const f=fOrig.cloneNode(true); f.id="mFx"; f.removeAttribute("aria-label"); f.value=PT_PERF.mode;
+      f.addEventListener("change",()=>PT_PERF.setMode(f.value)); $("mFxWrap").appendChild(f); }
     // group / period selects
     const mG=$("mGroup"), mP=$("mPeriod");
     if(mG){ mG.appendChild(new Option("All groups","all")); for(let g=1;g<=18;g++) mG.appendChild(new Option("Group "+g,String(g)));
@@ -158,7 +160,7 @@
     colorMode=mode;
     const sel=document.getElementById("colorby"); if(sel) sel.value=mode;
     document.getElementById("tempBar").classList.toggle("show", mode==="phase");
-    applyColors();
+    applyColors(true);
     if(mode==="phase"){ phaseCaption(); }
     else if(mode==="cat"){ if(CAPTIONS[curLayout]) setCaption(curLayout); }
     else {
@@ -207,4 +209,11 @@
     sel.addEventListener("change",()=>applyTheme(sel.value));
     let saved="cosmic"; try{ saved=localStorage.getItem("pt-theme")||"cosmic"; }catch(_){}
     applyTheme(saved);
+  })();
+
+  // Effects menu: Auto (drops to Lite by itself if frames fall), Full, or Lite
+  (function initFx(){
+    const sel=document.getElementById("fxSel"); if(!sel) return;
+    sel.value=PT_PERF.mode;
+    sel.addEventListener("change",()=>PT_PERF.setMode(sel.value));
   })();

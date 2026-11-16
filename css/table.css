@@ -115,36 +115,6 @@
 
   #container{position:absolute;left:0;right:0;bottom:0;top:118px;}
 
-  .element{
-    width:112px;height:140px;border-radius:8px;
-    border:1px solid color-mix(in srgb,var(--c) 62%,rgba(0,0,0,.55));
-    box-shadow:0 3px 12px rgba(0,0,0,.5), 0 0 14px color-mix(in srgb,var(--c) 30%,transparent), inset 0 1px 0 rgba(255,255,255,.08);
-    background:
-      linear-gradient(160deg,rgba(255,255,255,.06),transparent 42%),
-      radial-gradient(circle at 50% -10%,color-mix(in srgb,var(--c) 34%,transparent),transparent 70%),
-      color-mix(in srgb,var(--c) 13%,rgba(9,11,15,.62));
-    text-align:center;cursor:pointer;overflow:hidden;
-    /* NOTE: never transition `transform` — the CSS3D renderer writes it every frame */
-    transition:box-shadow .35s ease,border-color .35s ease,opacity .4s ease;
-    backface-visibility:hidden;
-  }
-  .element:hover{box-shadow:0 0 26px color-mix(in srgb,var(--c) 95%,transparent), inset 0 1px 0 rgba(255,255,255,.14);border-color:color-mix(in srgb,var(--c) 98%,transparent);}
-  .element.dim{opacity:.12;filter:grayscale(.85);}
-  .element.layerdim{opacity:.16;filter:saturate(.6) brightness(.8);}
-  .element.gridhide{opacity:0;pointer-events:none;}
-  .element.match{box-shadow:0 0 32px #fff,0 0 60px color-mix(in srgb,var(--c) 95%,transparent);border-color:#fff;}
-  .element .catbar{position:absolute;top:0;left:0;right:0;height:5px;background:var(--c);opacity:.95;}
-  .element .number{position:absolute;top:9px;right:11px;font-size:.92rem;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.92),0 0 3px rgba(0,0,0,.85);}
-  .element .wt{position:absolute;top:9px;left:11px;font-size:.62rem;font-weight:800;letter-spacing:.5px;color:#fff;opacity:.95;text-transform:uppercase;text-shadow:0 1px 3px rgba(0,0,0,.9);}
-  .element .symbol{position:absolute;top:25px;left:0;right:0;font-size:2.05rem;font-weight:700;letter-spacing:.5px;color:#fff;text-shadow:0 2px 7px rgba(0,0,0,.72),0 0 12px color-mix(in srgb,var(--c) 85%,transparent);}
-  .element .name{position:absolute;bottom:24px;left:0;right:0;font-size:1.12rem;font-weight:700;line-height:1.02;color:#fff;padding:0 4px;
-    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-shadow:0 1px 3px rgba(0,0,0,.92);}
-  .element .mass{position:absolute;bottom:7px;left:0;right:0;font-size:.84rem;font-weight:600;color:rgba(255,255,255,.9);text-shadow:0 1px 2px rgba(0,0,0,.88);}
-  .element .pval{position:absolute;bottom:6px;left:0;right:0;font-size:.82rem;font-weight:800;color:#fff;
-    text-shadow:0 1px 3px rgba(0,0,0,.9),0 0 8px color-mix(in srgb,var(--c) 80%,transparent);display:none;}
-  body.sortmode .element .mass{display:none;}
-  body.sortmode .element .name{bottom:30px;font-size:.74rem;-webkit-line-clamp:1;}
-  body.sortmode .element .pval{display:block;}
 
   /* legends */
   #legend{position:absolute;left:14px;bottom:14px;z-index:25;display:flex;flex-direction:column;gap:4px;max-width:200px;
@@ -205,7 +175,6 @@
   }
   /* let the table area breathe: bigger touch targets, no accidental text-select on drag */
   @media (pointer:coarse){
-    .element{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;}
     #container{touch-action:none;}
     /* easier-to-hit controls on touch */
     .bar button,.bar select,#search,.ddbtn,#sortDir{min-height:40px;}
@@ -286,7 +255,8 @@
   #overlay{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
     background:rgba(6,8,11,.72);backdrop-filter:blur(7px);
     opacity:0;visibility:hidden;transition:opacity .28s ease,visibility .28s ease;}
-  #overlay.show{opacity:1;visibility:visible;}
+  #overlay{pointer-events:none;}              /* while fading out, clicks go straight to the table */
+  #overlay.show{opacity:1;visibility:visible;pointer-events:auto;}
   #card{
     width:min(940px,94vw);height:min(630px,92vh);
     background:linear-gradient(180deg,#161a22,#0f1218);
@@ -349,8 +319,6 @@
   #close:focus-visible, .cardnav:focus-visible, #shareBtn:focus-visible, #sphereToggle:focus-visible,
   #tempSlider:focus-visible, #zoomSlider:focus-visible, #legend .row:focus-visible{
     outline:2px solid var(--accent);outline-offset:2px;}
-  .element:focus-visible{outline:3px solid #fff;outline-offset:2px;
-    box-shadow:0 0 30px color-mix(in srgb,var(--c) 95%,transparent),inset 0 1px 0 rgba(255,255,255,.14);}
   #legend .row{outline-offset:2px;}
 
   /* touch: send gestures to the 3D canvas instead of scrolling the page */
@@ -359,7 +327,6 @@
 
   @media (prefers-reduced-motion: reduce){
     #bg{display:none;}                         /* stop the animated starfield */
-    .element{transition:none;}
   }
 
   /* phase-at-temperature slider */
@@ -413,7 +380,6 @@
   /* ============ UI/UX Pro Max — type system + glass toolbar ============ */
   body{font-family:'Exo','Helvetica Neue',Helvetica,Arial,sans-serif;}
   /* numeric / tabular data in a mono face for precision */
-  .element .number,.element .mass,.element .pval,.element .wt,
   #tempVal,.dl .v,.config-line,#dSub,.gp,#hlCount,#scaleMin,#scaleMax,
   #layernav .lyr b{font-family:'Roboto Mono',ui-monospace,monospace;}
 
@@ -444,8 +410,6 @@
   #caption{font-size:.72rem;letter-spacing:.2px;line-height:1.45;}
   #hint{font-family:'Roboto Mono',monospace;font-size:.6rem;letter-spacing:.3px;}
 
-  /* smoother, meaningful feedback when filtering/searching (transform untouched) */
-  .element{transition:box-shadow .3s ease,border-color .3s ease,opacity .32s ease;}  /* PERF: no filter transition on 118 tiles */
 
 
   /* ============================================================
@@ -523,29 +487,6 @@
   #atomMark .e{fill:#fff;}
   @keyframes atomSpin{to{transform:rotate(360deg);}}
 
-  /* ---- element cards: a sheen sweep on hover, a pulse on a search hit ---- */
-  .element::after{
-    content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-    background:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.28) 50%,transparent 62%);
-    opacity:0;
-  }
-  .element:hover::after{animation:fxSheen .7s ease-out forwards;}
-  @keyframes fxSheen{
-    0%{opacity:0;transform:translateX(-120%);}
-    18%{opacity:1;}
-    100%{opacity:0;transform:translateX(120%);}
-  }
-  .element .catbar{
-    background:linear-gradient(90deg,var(--c),color-mix(in srgb,var(--c) 35%,#fff),var(--c));
-    background-size:220% 100%;
-  }
-  .element:hover .catbar{animation:fxBarSlide 1.4s linear infinite;}
-  @keyframes fxBarSlide{to{background-position:220% 0;}}
-  .element.match{animation:fxMatch 1.5s ease-in-out 3;}  /* PERF: was infinite — an 84px box-shadow repaint per matched tile, forever */
-  @keyframes fxMatch{
-    0%,100%{box-shadow:0 0 26px #fff,0 0 52px color-mix(in srgb,var(--c) 90%,transparent);}
-    50%    {box-shadow:0 0 40px #fff,0 0 84px color-mix(in srgb,var(--c) 98%,transparent);}
-  }
 
   /* ---- controls: glass, depth, and a lift on hover ---- */
   .bar button:not(.active),.bar select,.ddbtn:not(.on),#sortDir,#tempPreset,
@@ -619,7 +560,7 @@
   /* ============================================================
      ADDED — playful/smooth polish pass (Valence bridge)
      Rounder, softer chrome on outer control bars/dropdowns only.
-     Never touches #container, the CSS3D scene, or .element's core
+     Never touches #container or the tile scene's core
      dark styling / category colours.
      ============================================================ */
 
@@ -671,62 +612,39 @@
     box-shadow:0 0 0 2px color-mix(in srgb,var(--clay-glow) 55%,transparent),0 0 14px currentColor;
   }
 
-  /* ---- micro-interaction: tactile squash/bounce on card selection ----
-     Animates the .tile-inner wrapper's transform, never .element's own
-     transform (the CSS3D renderer writes that every frame). */
-  .element .tile-inner{position:relative;width:100%;height:100%;transform-origin:50% 50%;}
-  .element.tapped .tile-inner{animation:fxTap .46s cubic-bezier(.34,1.56,.64,1) both;}
-  @keyframes fxTap{
-    0%  {transform:scale(1);}
-    30% {transform:scale(.90,.94);}
-    55% {transform:scale(1.07,1.04);}
-    75% {transform:scale(.98,1.01);}
-    100%{transform:scale(1);}
-  }
-
-  /* ---- idle "breathing" on cards at rest: subtle, slow, cheap ----
-     A single shared keyframe, staggered per-card with --i (set once in JS,
-     no per-frame cost). Opacity/box-shadow/scale only — scale lives on the
-     inner wrapper so `.element`'s own transform is never touched. */
-  @media (prefers-reduced-motion:no-preference){
-    /* PERF: the glow half of the breathing animated box-shadow on all 118 tiles, which forced
-       a style recalc + repaint of every tile every frame. Only the transform half remains. */
-    .element .tile-inner{ animation:fxBreatheScale 7.5s ease-in-out infinite; animation-delay:calc(var(--i,0) * -0.5s); }
-    .element:hover,.element.match,.element.dim,.element.layerdim,.element.gridhide,.element.tapped{
-      animation-play-state:paused;
-    }
-    .element:hover .tile-inner,.element.match .tile-inner,.element.dim .tile-inner,
-    .element.layerdim .tile-inner,.element.gridhide .tile-inner,.element.tapped .tile-inner{
-      animation-play-state:paused;
-    }
-  }
-  @keyframes fxBreatheGlow{
-    0%,100%{ box-shadow:0 3px 12px rgba(0,0,0,.5), 0 0 14px color-mix(in srgb,var(--c) 30%,transparent), inset 0 1px 0 rgba(255,255,255,.08); }
-    50%    { box-shadow:0 3px 14px rgba(0,0,0,.5), 0 0 22px color-mix(in srgb,var(--c) 46%,transparent), inset 0 1px 0 rgba(255,255,255,.1); }
-  }
-  @keyframes fxBreatheScale{
-    0%,100%{ transform:scale(1); }
-    50%    { transform:scale(1.015); }
-  }
-
   /* ---- respect the OS setting: kill every added animation ---- */
   @media (prefers-reduced-motion:reduce){
-    #fxAurora,#fxGrain,#atomMark .spin,.element:hover::after,.element:hover .catbar,
-    .element.match,.bar button.active::after,.chip.active::after,#installBtn::after,
+    #fxAurora,#fxGrain,#atomMark .spin,
+    .bar button.active::after,.chip.active::after,#installBtn::after,
     #dSym::before,#toast::before{animation:none !important;}
     #fxAurora{opacity:.35;}
-    .element.match{box-shadow:0 0 32px #fff,0 0 60px color-mix(in srgb,var(--c) 95%,transparent);}
   }
   /* ---- PERF: pause ambient animation while the scene is moving or the detail card covers it ----
      body.fx-busy is set by animate() during layout tweens / camera motion;
      body.detail-open is set while the element card is open. */
-  body.fx-busy .element .tile-inner,body.detail-open .element .tile-inner,
   body.fx-busy #atomMark .spin,body.detail-open #atomMark .spin,
   body.detail-open #fxAurora,body.detail-open #fxGrain,
   body.detail-open .bar button.active::after,body.detail-open .chip.active::after,
   body.detail-open #installBtn::after{animation-play-state:paused;}
-  @media (prefers-reduced-motion:reduce){
-    .element{transition:none !important;}
-    .element .tile-inner,.element.tapped .tile-inner{animation:none !important;}
+  /* ---- WebGL tiles: the canvas, and the hidden per-element buttons for keyboard / screen readers ---- */
+  #container canvas{display:block;outline:none;}
+  #tileProxies{position:fixed;left:0;top:0;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
+  .tileproxy{position:absolute;width:1px;height:1px;padding:0;border:0;background:none;opacity:0;}
+
+  /* ---- performance mode (auto when frames drop, or chosen in the Effects menu) ---- */
+  body.perf-lite #fxAurora,body.perf-lite #fxGrain{display:none;}
+  body.perf-lite *{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;}
+
+  /* ---- legend + caption ease in when the colour mode changes ---- */
+  #legendRows .row,#scalebar{animation:fxLegendIn .28s ease both;}
+  #legendRows .row:nth-child(n+2){animation-delay:.02s;} #legendRows .row:nth-child(n+5){animation-delay:.05s;} #legendRows .row:nth-child(n+8){animation-delay:.08s;}
+  @keyframes fxLegendIn{from{opacity:0;transform:translateX(-6px);}to{opacity:1;transform:none;}}
+
+  /* ---- phones: keep the install button off the search box ---- */
+  @media (max-width:900px), (pointer:coarse){
+    #installBtn{top:auto;bottom:12px;left:12px;right:auto;}
   }
-</style>
+  @media (prefers-reduced-motion:reduce){
+    #legendRows .row,#scalebar{animation:none;}
+    #overlay,#card,#toast{transition:none !important;}
+  }

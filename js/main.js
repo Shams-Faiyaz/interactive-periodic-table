@@ -1,5 +1,6 @@
 /* main.js — start-up (runs last), PWA install + service worker, icon swap and the title atom mark. */
   init();
+  PT_PERF.apply(false);
   wireTouchZoom();
   buildMobileControls();
   // keep the group/period bars clear of the caption when it grows to 2 lines

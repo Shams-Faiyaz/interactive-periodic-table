@@ -45,7 +45,7 @@
     });
   }
   // distance the camera needs so a layout's extent fits the current viewport
-  function computeFit(arr){
+  function computeFit(arr,flat){
     let hw=0,hh=0;
     arr.forEach(o=>{ hw=Math.max(hw,Math.abs(o.position.x)); hh=Math.max(hh,Math.abs(o.position.y)); });
     hw+=CARD_HALF; hh+=CARD_HALF;
@@ -53,7 +53,8 @@
     const asp=camera.aspect||1.6;
     const zH=hh/Math.tan(vFOV);
     const zW=(hw/asp)/Math.tan(vFOV);
-    return Math.max(zH,zW)*1.04*TAP_ZOOM;
+    // flat layouts (table, grid) must fit the screen whole; only the 3D shapes are framed tighter on touch
+    return Math.max(zH,zW)*1.04*(flat?1:TAP_ZOOM);
   }
 
   /* ---------- colour helpers ---------- */
@@ -98,9 +99,10 @@
     if(v===null) return "#3a3f4a";               // CHANGED
     return heat((v-lo)/(hi-lo||1));
   }
-  function applyColors(){
+  function applyColors(wave){
     // PERF: only touch tiles whose colour actually changed
-    cards.forEach(c=>{ const col=colorFor(c.data); if(c._c!==col){ c._c=col; c.el.style.setProperty("--c",col); } });
+    // each tile eases to its new colour; `wave` staggers them diagonally so a mode change sweeps across the table
+    cards.forEach((c,i)=>{ const col=colorFor(c.data); if(c._c!==col){ c._c=col; Tiles.setColor(i,col,wave?(c.data.col+c.data.row)*16:0); } });
     buildLegend();
   }
 
@@ -121,7 +123,9 @@
       Object.entries(CATEGORY_COLORS).forEach(([cat,color])=>{
         const r=document.createElement("div"); r.className="row"; r.dataset.cat=cat;
         r.innerHTML=`<span class="sw" style="background:${color};color:${color}"></span>${cat}`;
+        r.tabIndex=0; r.setAttribute("role","button"); r.setAttribute("aria-label","Highlight only "+cat);
         r.addEventListener("click",()=>toggleCategory(cat,r));
+        r.addEventListener("keydown",ev=>{ if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); toggleCategory(cat,r); } });
         rows.appendChild(r);
       });
     } else {

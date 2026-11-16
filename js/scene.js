@@ -6,41 +6,24 @@
     camera.position.z=3000;
     scene=new THREE.Scene();
 
+    // Tiles are drawn in WebGL (tiles-gl.js). Each element also gets a visually hidden <button>,
+    // in atomic-number order, so keyboard and screen-reader users can reach, focus and open it.
+    const proxies=document.createElement("div"); proxies.id="tileProxies";
+    proxies.setAttribute("role","group"); proxies.setAttribute("aria-label","Elements, in atomic-number order");
     ELEMENTS.forEach((e,idx)=>{
-      const el=document.createElement("div");
-      el.className="element";
-      el.tabIndex=0; el.setAttribute("role","button");
+      const el=document.createElement("button"); el.type="button"; el.className="tileproxy";
       el.setAttribute("aria-label",`${e.name}, symbol ${e.sym}, atomic number ${e.n}, ${e.cat}`);
-      el.dataset.n=e.n; el.title=e.name;
-      el.style.setProperty("--c",CATEGORY_COLORS[e.cat]||CATEGORY_COLORS.Unknown);
-      // ADDED: --i staggers the idle "breathing" animation cheaply (set once, no per-frame JS)
-      el.style.setProperty("--i",idx%14);
-      // ADDED: contents live in a .tile-inner wrapper so tap/breathe scale effects can
-      // animate `transform` on a child without ever touching the CSS3D renderer's own
-      // per-frame transform writes on `.element` itself.
-      el.innerHTML=`<div class="tile-inner"><div class="catbar"></div><div class="wt">${e.block}</div><div class="number">${e.n}</div>
-        <div class="symbol">${e.sym}</div><div class="name">${e.name}</div><div class="mass">${(+e.mass).toFixed(2)}</div><div class="pval"></div></div>`;
-      // ADDED: tactile squash/bounce micro-interaction on selection
-      const tapFx=()=>{
-        if(reduceMotion) return;
-        el.classList.remove("tapped"); void el.offsetWidth; el.classList.add("tapped");
-      };
-      el.addEventListener("click",ev=>{ev.stopPropagation();tapFx();openDetail(e);});
-      // Touch: OrbitControls treats a finger-down as a pan, which swallows the tap/click.
-      // Detect a genuine tap (little movement, short time) and open the card ourselves.
-      let _tx=0,_ty=0,_tt=0,_moved=false;
-      el.addEventListener("touchstart",ev=>{ const t=ev.changedTouches[0]; _tx=t.clientX;_ty=t.clientY;_tt=Date.now();_moved=false; },{passive:true});
-      el.addEventListener("touchmove",ev=>{ const t=ev.changedTouches[0]; if(Math.abs(t.clientX-_tx)>12||Math.abs(t.clientY-_ty)>12) _moved=true; },{passive:true});
-      el.addEventListener("touchend",ev=>{ if(!_moved && ev.touches.length===0 && Date.now()-_tt<500){ ev.preventDefault(); ev.stopPropagation(); tapFx(); openDetail(e); } },{passive:false});
-      el.addEventListener("keydown",ev=>{
-        if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); ev.stopPropagation(); tapFx(); openDetail(e); return; }
-        if(curLayout==="table" && !overlay.classList.contains("show")) handleCardArrow(ev,e);
-      });
-      el.addEventListener("animationend",ev=>{ if(ev.animationName==="fxTap") el.classList.remove("tapped"); });
-      const obj=new THREE.CSS3DObject(el);
+      el.dataset.n=e.n;
+      el.addEventListener("click",()=>{ Tiles.tap(idx); openDetail(e); });
+      el.addEventListener("focus",()=>{ if(el.matches(":focus-visible")) Tiles.setFocus(idx); });
+      el.addEventListener("blur",()=>Tiles.setFocus(-1));
+      el.addEventListener("keydown",ev=>{ if(curLayout==="table" && !overlay.classList.contains("show")) handleCardArrow(ev,e); });
+      proxies.appendChild(el);
+      const obj=new THREE.Object3D();              // placeholder; Tiles.build swaps in the real mesh
       obj.position.set(Math.random()*4000-2000,Math.random()*4000-2000,Math.random()*4000-2000);
       scene.add(obj); objects.push(obj); cards.push({el,data:e});
     });
+    document.body.appendChild(proxies);
 
     // table — centred: columns 1..18 (mid 9.5), rows 1..10 (mid 5.75 incl. the f-block gap)
     ELEMENTS.forEach(e=>{
@@ -73,10 +56,16 @@
       gridBlocks.push({key:bk, members, sub, hw:(cols-1)/2*138+70, hh:(rows-1)/2*168+70, count:members.length});
     });
 
-    renderer=new THREE.CSS3DRenderer();
+    renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:"high-performance"});
+    renderer.setClearColor(0x000000,0);
+    renderer.setPixelRatio(tilePixelRatio());
     const cont=document.getElementById("container");
     renderer.setSize(cont.clientWidth,cont.clientHeight);
+    renderer.domElement.setAttribute("aria-hidden","true");   // the hidden buttons above carry the semantics
     cont.appendChild(renderer.domElement);
+    Tiles.build(renderer,scene,objects);
+    Tiles.setInstant(reduceMotion);
+    wireTilePointer(renderer.domElement);
 
     controls=new THREE.OrbitControls(camera,renderer.domElement);
     controls.enableDamping=true; controls.dampingFactor=0.09;
@@ -100,8 +89,8 @@
     });
     // highlight multi-select dropdown
     const hlBtn=document.getElementById("hlBtn"), hlMenu=document.getElementById("hlMenu");
-    hlBtn.addEventListener("click",ev=>{ ev.stopPropagation(); hlMenu.classList.toggle("open"); });
-    document.addEventListener("click",ev=>{ if(!document.getElementById("highlightDD").contains(ev.target)) hlMenu.classList.remove("open"); });
+    hlBtn.addEventListener("click",ev=>{ ev.stopPropagation(); hlMenu.classList.toggle("open"); hlBtn.setAttribute("aria-expanded",hlMenu.classList.contains("open")?"true":"false"); });
+    document.addEventListener("click",ev=>{ if(!document.getElementById("highlightDD").contains(ev.target)){ hlMenu.classList.remove("open"); hlBtn.setAttribute("aria-expanded","false"); } });
     hlMenu.querySelectorAll("input[type=checkbox]").forEach(cb=>{
       cb.addEventListener("change",()=>{ const set=filters[cb.dataset.group];
         if(cb.checked) set.add(cb.dataset.k); else set.delete(cb.dataset.k); applyFilters(); });
@@ -114,6 +103,7 @@
       sortAsc=!sortAsc;
       const _sd=document.getElementById("sortDir");                    // CHANGED: keep the SVG, swap only the label
       _sd.classList.toggle("asc",sortAsc);
+      _sd.setAttribute("aria-label",sortAsc?"Sort order: low to high. Switch to high to low":"Sort order: high to low. Switch to low to high");
       _sd.querySelector("#sortDirLbl").innerHTML=sortAsc?"low&rarr;high":"high&rarr;low";
       const s=document.getElementById("sortby").value; if(s) setSort(s);
     });
@@ -177,7 +167,7 @@
     const w=cont.clientWidth, h=cont.clientHeight;
     renderer.setSize(w,h);
     camera.aspect=w/h; camera.updateProjectionMatrix();
-    ["table","sphere","helix","grid"].forEach(nm=>fitDist[nm]=computeFit(targets[nm]));
+    ["table","sphere","helix","grid"].forEach(nm=>fitDist[nm]=computeFit(targets[nm],nm==="table"||nm==="grid"));
     render();
   }
 
@@ -193,9 +183,9 @@
     document.querySelectorAll("#controls .bar button").forEach(b=>b.classList.remove("active"));
     document.getElementById("btn-"+name).classList.add("active");
     // leaving sort mode: restore normal card faces + clear its value labels/dims
-    document.body.classList.remove("sortmode");
+    document.body.classList.remove("sortmode"); Tiles.setSort(null);
     document.getElementById("sortby").value="";
-    cards.forEach(c=>c.el.classList.remove("dim","match"));
+    cards.forEach((c,i)=>Tiles.setState(i,false,false));
     if(anyFilter()) applyFilters();
     curLayout=name;
     { const mv=document.getElementById("mView"); if(mv && ["table","sphere","helix","grid"].includes(name) && mv.value!==name) mv.value=name; }
@@ -203,7 +193,7 @@
     const isGrid=(name==="grid"), isSphere=(name==="sphere");
     document.getElementById("layernav").style.display=isGrid?"flex":"none";
     document.getElementById("sphereToggle").style.display=isSphere?"block":"none";
-    if(!isGrid) cards.forEach(c=>c.el.classList.remove("layerdim","gridhide"));
+    if(!isGrid) cards.forEach((c,i)=>Tiles.setHidden(i,false));
     // leaving sphere: always reset to the outside camera range
     if(!isSphere){ sphereInside=false; controls.minDistance=350; controls.maxDistance=9000; }
     if(isGrid){ gridFocus(curGridLayer,1500); }
@@ -228,7 +218,8 @@
 
   function computeFitFor(hw,hh){
     const vFOV=THREE.MathUtils.degToRad(camera.fov)/2, asp=camera.aspect||1.6;
-    return Math.max(hh/Math.tan(vFOV),(hw/asp)/Math.tan(vFOV))*1.06*TAP_ZOOM;
+    if(window.innerWidth>900) hw+=70;        // keep the outer column clear of the zoom control
+    return Math.max(hh/Math.tan(vFOV),(hw/asp)/Math.tan(vFOV))*1.06;
   }
   function tweenCamera(pz_target,tz_target,dur){
     if(reduceMotion) dur=0;
@@ -295,7 +286,7 @@
       });
     }
     const focus=new Set(gridBlocks[k].members);
-    cards.forEach((c,i)=>{ c.el.classList.toggle("gridhide",!focus.has(i)); c.el.classList.remove("layerdim"); });
+    cards.forEach((c,i)=>Tiles.setHidden(i,!focus.has(i)));
     transform(targets.grid,dur);                       // animate cards to new positions (camera handled below)
     tweenCamera(computeFitFor(gridBlocks[k].hw,gridBlocks[k].hh),0,dur);
     document.querySelectorAll("#layernav .lyr").forEach(btn=>btn.classList.toggle("active",+btn.dataset.k===k));
@@ -344,8 +335,8 @@
     document.getElementById("layernav").style.display="none";
     document.getElementById("sphereToggle").style.display="none";
     sphereInside=false; controls.minDistance=350; controls.maxDistance=9000;
-    cards.forEach(c=>c.el.classList.remove("layerdim"));
-    colorMode=prop; document.getElementById("colorby").value=prop; document.getElementById("tempBar").classList.remove("show"); applyColors();
+    cards.forEach((c,i)=>Tiles.setHidden(i,false));
+    colorMode=prop; document.getElementById("colorby").value=prop; document.getElementById("tempBar").classList.remove("show"); applyColors(true);
     buildSortTargets(prop);
     document.body.classList.add("sortmode");
     const meta=SORT_META[prop];
@@ -365,12 +356,9 @@
       targets.sort[gi].position.set(((r%cols)-(cols-1)/2)*138, ((rows-1)/2-Math.floor(r/cols))*168, 0);
     });
     fitDist.sort=computeFitFor((cols-1)/2*138+70,(rows-1)/2*168+70);
-    cards.forEach((c,i)=>{
-      const v=ELEMENTS[i][prop], pv=c.el.querySelector(".pval");
-      if(typeof v==="number"){ pv.textContent=(+v).toFixed(meta.fix)+meta.unit; c.el.classList.remove("dim"); }
-      else { pv.textContent="—"; c.el.classList.add("dim"); }
-      c.el.classList.remove("match");
-    });
+    // value labels live in a second text atlas that cross-fades in; cards with no data dim out
+    Tiles.setSort(prop,meta);
+    cards.forEach((c,i)=>Tiles.setState(i,typeof ELEMENTS[i][prop]!=="number",false));
   }
 
   function transform(arr,dur,camZ){
@@ -422,19 +410,51 @@
     if(shapes.renderer) sizeShapes();
     syncZoomSlider();
   }
-  // PERF: render on demand. The CSS3D scene is only re-rendered when a tween is running,
-  // the camera is moving/damping, or something called render(). Nothing is rendered behind
-  // the open detail card. body.fx-busy pauses the idle CSS animations while the scene moves.
-  let _dirty=true, _busyT=0, _busyOn=false;
+  // Render on demand. The WebGL scene is only drawn when a tween is running, the camera is
+  // moving/damping, a tile is easing between states, or something called render(). Nothing is
+  // drawn behind the open detail card. All motion is time-based (dt), so it runs at the display's
+  // own refresh rate: 60, 90, 120 Hz or more. body.fx-busy pauses ambient CSS animation while the scene moves.
+  let _dirty=true, _busyT=0, _busyOn=false, _lastT=0;
   function animate(t){
-    requestAnimationFrame(animate); if(document.hidden) return;
+    requestAnimationFrame(animate); if(document.hidden){ _lastT=0; return; }
     t=t||performance.now();
+    const dt=_lastT?Math.min(0.1,(t-_lastT)/1000):1/60; _lastT=t;
     const tweening=TWEEN.getAll().length>0; TWEEN.update();
     const moved=controls.update();
-    if(tweening||moved||_dirty){ _busyT=t; if(!_busyOn){ _busyOn=true; document.body.classList.add("fx-busy"); } }
-    else if(_busyOn && t-_busyT>400){ _busyOn=false; document.body.classList.remove("fx-busy"); syncZoomSlider(); }   // slider follows the settled camera
-    if(!overlay.classList.contains("show") && (tweening||moved||_dirty)){ renderer.render(scene,camera); _dirty=false; }
-    if(bohr.active) renderBohr(); if(shapes.active) renderShapes();
+    const open=overlay.classList.contains("show");
+    const easing=open?false:Tiles.update(dt,t);
+    if(tweening||moved){ _busyT=t; if(!_busyOn){ _busyOn=true; document.body.classList.add("fx-busy"); } }
+    else if(_busyOn && t-_busyT>400){ _busyOn=false; document.body.classList.remove("fx-busy"); syncZoomSlider(); refreshHover(); }
+    if(!open && (tweening||moved||easing||_dirty)){ renderer.render(scene,camera); _dirty=false; PT_PERF.frame(dt,tweening||moved); }
+    if(bohr.active) renderBohr(dt); if(shapes.active) renderShapes(dt);
+  }
+
+  // ---- pointer: hover + tap on the WebGL tiles (OrbitControls keeps handling drags) ----
+  let _px=-1,_py=-1,_pdown=false,_pmoved=false,_pinside=false;
+  function refreshHover(){
+    const dom=renderer.domElement;
+    if(!_pinside||(_pdown&&_pmoved)||overlay.classList.contains("show")){ Tiles.setHover(-1); dom.style.cursor=""; dom.title=""; return; }
+    const i=Tiles.pick(_px,_py,camera,dom);
+    Tiles.setHover(i); dom.style.cursor=i>=0?"pointer":""; dom.title=i>=0?ELEMENTS[i].name:"";
+  }
+  function wireTilePointer(dom){
+    let sx=0,sy=0,st=0,_hq=false;
+    dom.addEventListener("pointerdown",ev=>{ if(ev.button>0) return; _pdown=true; _pmoved=false; sx=ev.clientX; sy=ev.clientY; st=performance.now(); });
+    dom.addEventListener("pointermove",ev=>{
+      if(_pdown && (Math.abs(ev.clientX-sx)>8||Math.abs(ev.clientY-sy)>8)) _pmoved=true;
+      if(ev.pointerType!=="mouse") return;
+      _px=ev.clientX; _py=ev.clientY; _pinside=true;
+      if(_hq) return; _hq=true;                          // at most one pick per frame
+      requestAnimationFrame(()=>{ _hq=false; refreshHover(); });
+    });
+    dom.addEventListener("pointerleave",()=>{ _pinside=false; refreshHover(); });
+    window.addEventListener("pointercancel",()=>{ _pdown=false; });
+    window.addEventListener("pointerup",ev=>{
+      if(!_pdown) return; _pdown=false;
+      if(_pmoved || performance.now()-st>500 || ev.target!==dom) return;   // it was a drag, not a tap
+      const i=Tiles.pick(ev.clientX,ev.clientY,camera,dom);
+      if(i>=0){ Tiles.tap(i); openDetail(ELEMENTS[i]); }
+    });
   }
   function render(){ _dirty=true; }
 

@@ -3,11 +3,14 @@
   const overlay=document.getElementById("overlay");
   document.getElementById("close").addEventListener("click",closeDetail);
   overlay.addEventListener("click",e=>{ if(e.target===overlay) closeDetail(); });
-  document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeDetail(); });
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape" && overlay.classList.contains("show")) closeDetail(); });
   document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.t)));
 
+  // a11y: expose the tab strip and its panels as real tabs
+  document.querySelectorAll("#tabs button").forEach(b=>{ b.setAttribute("role","tab"); b.id="tab-"+b.dataset.t; b.setAttribute("aria-controls","panel-"+b.dataset.t); b.setAttribute("aria-selected",b.classList.contains("active")?"true":"false"); });
+  document.querySelectorAll("#panels .panel").forEach(p=>{ p.setAttribute("role","tabpanel"); p.setAttribute("aria-labelledby",p.id.replace("panel-","tab-")); });
   function switchTab(t){
-    document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("active",b.dataset.t===t));
+    document.querySelectorAll("#tabs button").forEach(b=>{ const on=b.dataset.t===t; b.classList.toggle("active",on); b.setAttribute("aria-selected",on?"true":"false"); });
     document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
     document.getElementById("panel-"+t).classList.add("active");
     bohr.active=(t==="bohr");

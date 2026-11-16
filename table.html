@@ -22,7 +22,7 @@
 <link rel="stylesheet" href="css/table.css">
 </head>
 <body>
-  <canvas id="bg"></canvas>
+  <canvas id="bg" aria-hidden="true"></canvas>
   <div id="vignette"></div>
   <!-- ADDED: ambient VFX layers — accent-tinted aurora + fine grain, both behind the scene -->
   <div id="fxAurora" aria-hidden="true"></div>
@@ -42,7 +42,7 @@
     </div>
     <div class="bar">
       <div class="dropdown" id="highlightDD">
-        <button class="ddbtn" id="hlBtn">Highlight ▾ <span id="hlCount"></span></button>
+        <button class="ddbtn" id="hlBtn" aria-haspopup="true" aria-expanded="false" aria-controls="hlMenu">Highlight ▾ <span id="hlCount"></span></button>
         <div class="ddmenu" id="hlMenu">
           <div class="ddsection">Metal type</div>
           <label><input type="checkbox" data-group="type" data-k="Metal">Metals</label>
@@ -85,7 +85,7 @@
         <option value="mass">Atomic mass</option>
         <option value="density">Density</option>
       </select>
-      <button id="sortDir" title="Toggle ascending / descending"><span id="sortDirLbl">high&rarr;low</span></button>
+      <button id="sortDir" title="Toggle ascending / descending" aria-label="Sort order: high to low. Switch to low to high"><span id="sortDirLbl">high&rarr;low</span></button>
       <label>Theme</label>
       <select id="themeSel" aria-label="Colour theme">
         <option value="cosmic">Cosmic</option>
@@ -94,6 +94,12 @@
         <option value="tech">Tech Innovation</option>
         <option value="ember">Ember Sunset</option>
         <option value="forest">Forest</option>
+      </select>
+      <label for="fxSel">Effects</label>
+      <select id="fxSel" aria-label="Visual effects level" title="Auto lowers effects by itself if the animation is not smooth">
+        <option value="auto">Auto</option>
+        <option value="full">Full</option>
+        <option value="lite">Lite (fastest)</option>
       </select>
     </div>
     <div class="bar" id="tempBar">
@@ -120,7 +126,7 @@
           <option value="helix">Helix</option>
           <option value="grid">Grid</option>
         </select>
-        <button id="mOptionsBtn" type="button">Options ▾</button>
+        <button id="mOptionsBtn" type="button" aria-haspopup="dialog">Options ▾</button>
         <button id="mMuteBtn" type="button" title="Mute / unmute sound effects" aria-label="Mute or unmute sound effects" aria-pressed="false"></button>
       </div>
       <div class="mrow">
@@ -130,12 +136,13 @@
     </div>
   </div>
 
-  <div id="mSheet" hidden>
+  <div id="mSheet" role="dialog" aria-modal="true" aria-label="Options" hidden>
     <div class="msheetcard">
       <div class="mshhead"><b>Options</b><button id="mSheetClose" type="button" aria-label="Close">×</button></div>
       <div class="msec">Colour by</div><div id="mColorWrap"></div>
       <div class="msec">Sort by</div><div class="mrow" id="mSortWrap"></div>
       <div class="msec">Highlight</div><div id="mHl"></div>
+      <div class="msec">Effects</div><div id="mFxWrap"></div>
       <button id="mClear" type="button">Clear all ✕</button>
     </div>
   </div>
@@ -144,9 +151,9 @@
   <div id="periodBar"></div>
 
   <div id="zoomctl">
-    <button id="zoomIn" title="Zoom in (Ctrl +)">＋</button>
+    <button id="zoomIn" title="Zoom in (Ctrl +)" aria-label="Zoom in">＋</button>
     <input id="zoomSlider" type="range" min="0" max="100" value="50" title="Zoom" aria-label="Zoom level">
-    <button id="zoomOut" title="Zoom out (Ctrl −)">－</button>
+    <button id="zoomOut" title="Zoom out (Ctrl −)" aria-label="Zoom out">－</button>
   </div>
 
   <div id="container"></div>
@@ -163,9 +170,9 @@
   <div id="hint">drag rotate · scroll pan · Ctrl+scroll zoom · keys 1–4 switch views · R reset · / search</div>
 
   <div id="layernav">
-    <button class="arrow" id="layPrev">&#8249;</button>
+    <button class="arrow" id="layPrev" aria-label="Previous block">&#8249;</button>
     <div class="layers" id="layerBtns"></div>
-    <button class="arrow" id="layNext">&#8250;</button>
+    <button class="arrow" id="layNext" aria-label="Next block">&#8250;</button>
   </div>
 
   <button id="sphereToggle">Step inside the sphere</button>
@@ -195,15 +202,15 @@
       </div>
       <div id="panels">
         <div class="panel active" id="panel-bohr">
-          <div id="bohrWrap"><canvas id="bohrCanvas"></canvas></div>
+          <div id="bohrWrap"><canvas id="bohrCanvas" role="img" aria-label="3D model of the atom: nucleus and electron shells. Drag to rotate."></canvas></div>
           <div id="bohrTools">
-            <button id="bohrMode" title="Switch 2D / 3D">3D</button>
-            <button id="bohrPause" title="Pause / play">⏸</button>
+            <button id="bohrMode" title="Switch 2D / 3D" aria-label="Showing 3D atom. Switch to flat 2D diagram">3D</button>
+            <button id="bohrPause" title="Pause / play" aria-pressed="false" aria-label="Pause atom animation">⏸</button>
           </div>
           <div id="bohrInfo"></div>
         </div>
         <div class="panel" id="panel-shapes">
-          <div id="shapesWrap"><canvas id="shapesCanvas"></canvas></div>
+          <div id="shapesWrap"><canvas id="shapesCanvas" role="img" aria-label="3D shapes of the orbitals this element occupies. Drag to rotate."></canvas></div>
           <div id="shapesLabel"></div>
           <div id="shapesLegend"></div>
         </div>
@@ -217,11 +224,12 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js" defer></script>
-  <script src="https://unpkg.com/three@0.128.0/examples/js/renderers/CSS3DRenderer.js" defer></script>
-  <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js" defer></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js" defer></script>
 <script src="js/elements-data.js" defer></script>
 <script src="js/icons.js" defer></script>
 <script src="js/core.js" defer></script>
+<script src="js/perf.js" defer></script>
+<script src="js/tiles-gl.js" defer></script>
 <script src="js/scene.js" defer></script>
 <script src="js/controls.js" defer></script>
 <script src="js/atoms.js" defer></script>

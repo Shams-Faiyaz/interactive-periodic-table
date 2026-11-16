@@ -34,7 +34,7 @@
       // PERF: ~30fps, and nothing at all while the tab is hidden or the detail card covers the sky
       if(!reduceMotion){
         requestAnimationFrame(draw);
-        if(document.hidden || overlay.classList.contains("show") || t-_lastDraw<30) return;
+        if(document.hidden || overlay.classList.contains("show") || t-_lastDraw<(PT_PERF.lite?66:30)) return;   // ~30fps, ~15fps in performance mode
         _lastDraw=t;
       }
       cx.clearRect(0,0,W,H);

@@ -11,12 +11,16 @@
   const bohr={renderer:null,scene:null,camera:null,controls:null,active:false,group:null,shells:[],paused:false,mode:"3d"};
   document.getElementById("bohrPause").addEventListener("click",()=>{
     bohr.paused=!bohr.paused;
-    document.getElementById("bohrPause").innerHTML=bohr.paused?window.PT_ICONS.play:window.PT_ICONS.pause;   // CHANGED: SVG
+    const _bp=document.getElementById("bohrPause");
+    _bp.innerHTML=bohr.paused?window.PT_ICONS.play:window.PT_ICONS.pause;
+    _bp.setAttribute("aria-pressed",bohr.paused?"true":"false");
+    _bp.setAttribute("aria-label",bohr.paused?"Play atom animation":"Pause atom animation");
     if(!bohr.paused && bohr.mode==="3d" && bohr.controls) bohr.controls.autoRotate=true;
   });
   document.getElementById("bohrMode").addEventListener("click",()=>{
     bohr.mode = bohr.mode==="3d" ? "2d" : "3d";
     document.getElementById("bohrMode").textContent = bohr.mode==="3d" ? "3D" : "2D";
+    document.getElementById("bohrMode").setAttribute("aria-label",bohr.mode==="3d"?"Showing 3D atom. Switch to flat 2D diagram":"Showing flat 2D diagram. Switch to 3D atom");
     if(current) buildBohr(current);
   });
   function initBohr(){
@@ -40,7 +44,7 @@
     if(!bohr.renderer) return;
     const wrap=document.getElementById("bohrWrap");
     const w=wrap.clientWidth,h=wrap.clientHeight;
-    bohr.renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));   // PERF: cap (3x phones drew 9x pixels)
+    bohr.renderer.setPixelRatio(atomPixelRatio()); bohr.dirty=true;
     bohr.renderer.setSize(w,h,false);
     bohr.camera.aspect=w/h; bohr.camera.updateProjectionMatrix();
   }
@@ -70,7 +74,7 @@
 
     const is2D=(bohr.mode==="2d");
     // PERF: one shared geometry + material for every electron (was one of each per electron)
-    const eGeo=new THREE.SphereGeometry(eSize,18,18);
+    const eGeo=new THREE.SphereGeometry(eSize,14,12);
     const eMat=new THREE.MeshStandardMaterial({color:0xbfefff,emissive:0x33aadd,emissiveIntensity:.9,roughness:.4});
     shells.forEach((count,si)=>{
       const r=shellR(si), tilt=is2D?0:si*0.22;
@@ -79,13 +83,15 @@
       ring.rotation.x = is2D ? 0 : (Math.PI/2 + tilt);   // 2D: rings lie flat in the screen plane
       g.add(ring);
       const eg=new THREE.Group(); if(!is2D) eg.rotation.x=tilt;
+      // one instanced draw call per shell (was one mesh per electron: 118 draw calls for Og)
+      const im=new THREE.InstancedMesh(eGeo,eMat,count), m4=new THREE.Matrix4();
       for(let k=0;k<count;k++){
         const a=(k/count)*Math.PI*2;
-        const em=new THREE.Mesh(eGeo,eMat);
-        if(is2D) em.position.set(Math.cos(a)*r,Math.sin(a)*r,0);
-        else     em.position.set(Math.cos(a)*r,0,Math.sin(a)*r);
-        eg.add(em);
+        if(is2D) m4.makeTranslation(Math.cos(a)*r,Math.sin(a)*r,0);
+        else     m4.makeTranslation(Math.cos(a)*r,0,Math.sin(a)*r);
+        im.setMatrixAt(k,m4);
       }
+      im.instanceMatrix.needsUpdate=true; eg.add(im);
       g.add(eg);
       bohr.shells.push({grp:eg,speed:0.5/(si+1)+0.12,axis:is2D?"z":"y"});
     });
@@ -104,12 +110,19 @@
       `<b>Nucleus:</b> ${protons} protons, ${neutrons} neutrons<br>`+
       `<b>Electron shells:</b> ${shells.join(" · ")}<br>`+
       `<span style="opacity:.6">${is2D?"Flat 2D shell diagram · scroll to zoom.":"Drag to rotate · scroll to zoom · auto-spins until grabbed."}</span>`;
-    sizeBohr();
+    sizeBohr(); bohr.dirty=true;
   }
-  function renderBohr(){
+  // Time-based: electrons and auto-spin move by seconds, not frames, so the speed is the same
+  // at 60 Hz and 120 Hz and the atom simply gets smoother on a faster display.
+  function renderBohr(dt){
     if(!bohr.renderer||!bohr.group) return;
-    if(!bohr.paused && !reduceMotion) bohr.shells.forEach(s=>{ s.grp.rotation[s.axis]+=s.speed*0.03; }); // electrons orbit
-    if(bohr.controls){ if(bohr.paused) bohr.controls.autoRotate=false; bohr.controls.update(); }
+    dt=dt||1/60;
+    const spin=!bohr.paused && !reduceMotion;
+    if(spin) bohr.shells.forEach(s=>{ s.grp.rotation[s.axis]+=s.speed*1.8*dt; }); // electrons orbit
+    let moved=false;
+    if(bohr.controls){ if(bohr.paused) bohr.controls.autoRotate=false; bohr.controls.autoRotateSpeed=1.6*60*dt; moved=bohr.controls.update(); }
+    if(!spin && !moved && !bohr.dirty) return;          // paused and untouched: nothing to redraw
+    bohr.dirty=false;
     bohr.renderer.render(bohr.scene,bohr.camera);
   }
 
@@ -133,7 +146,7 @@
   function sizeShapes(){
     if(!shapes.renderer) return;
     const wrap=document.getElementById("shapesWrap"), w=wrap.clientWidth,h=wrap.clientHeight;
-    shapes.renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+    shapes.renderer.setPixelRatio(atomPixelRatio()); shapes.dirty=true;
     shapes.renderer.setSize(w,h,false);
     shapes.camera.aspect=w/h; shapes.camera.updateProjectionMatrix();
   }
@@ -214,10 +227,14 @@
     if(present.p){ ["pₓ:"+ORB_COLORS.px,"pᵧ:"+ORB_COLORS.py,"p_z:"+ORB_COLORS.pz].forEach(()=>{}); }
     shapes.controls.autoRotate=!reduceMotion;
     shapes.camera.position.set(0,7,34+order.length*4);
-    shapes.controls.update();
+    shapes.controls.update(); shapes.dirty=true;
   }
-  function renderShapes(){
+  function renderShapes(dt){
     if(!shapes.renderer||!shapes.group) return;
-    if(shapes.controls) shapes.controls.update();
+    dt=dt||1/60;
+    let moved=false;
+    if(shapes.controls){ shapes.controls.autoRotateSpeed=1.3*60*dt; moved=shapes.controls.update(); }
+    if(!moved && !shapes.dirty) return;
+    shapes.dirty=false;
     shapes.renderer.render(shapes.scene,shapes.camera);
   }
