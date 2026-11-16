@@ -1,5 +1,5 @@
 /* Periodic Table PWA service worker */
-const CACHE = "periodic-3d-v11";
+const CACHE = "periodic-3d-v12";
 
 // App shell served from our own origin (relative to the SW scope)
 const CORE = [
@@ -9,7 +9,16 @@ const CORE = [
   "./js/index.js",
   "./table.html",
   "./css/table.css",
-  "./js/table.js",
+  "./js/icons.js",
+  "./js/core.js",
+  "./js/tiles-gl.js",
+  "./js/scene.js",
+  "./js/controls.js",
+  "./js/atoms.js",
+  "./js/detail.js",
+  "./js/starfield.js",
+  "./js/sfx.js",
+  "./js/main.js",
   "./js/elements-data.js",
   "./manifest.json",
   "./icons/icon-192.png",
