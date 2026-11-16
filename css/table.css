@@ -415,7 +415,7 @@
   /* ============================================================
      ADDED — VISUAL FX + ICON LAYER
      Everything below is additive polish. It never touches the
-     3D transforms the CSS3D renderer writes each frame.
+     3D layout itself.
      ============================================================ */
 
   /* ---- ambient aurora, tinted by whichever theme is active ---- */

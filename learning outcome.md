@@ -4,7 +4,7 @@ Project: **Valence** — a landing page plus an interactive 3D periodic table th
 installs like an app.
 
 Repo: `https://github.com/Shams-Faiyaz/interactive-periodic-table`
-Live: `https://shams-faiyaz.github.io/interactive-periodic-table/`
+Live: `https://interactive-periodic-table-chi.vercel.app/`
 Folder on my machine: `~/Documents/interactive-periodic-table`
 Written: 22 August 2026
 

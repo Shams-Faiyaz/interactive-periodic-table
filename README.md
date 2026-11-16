@@ -16,7 +16,19 @@ Two pages, one folder.
 index.html, table.html      pages
 manifest.json, sw.js        PWA definition + service worker (stay at root — scope)
 css/index.css, css/table.css
-js/index.js, js/table.js, js/elements-data.js
+js/index.js                 landing page
+js/elements-data.js         data for all 118 elements
+js/icons.js                 SVG icon set (PT_ICONS)
+js/core.js                  shared state, constants, colour helpers, legend
+js/perf.js                  automatic performance mode (PT_PERF) + Effects menu logic
+js/tiles-gl.js              the 118 element tiles, drawn in WebGL (PT_TILES)
+js/scene.js                 camera, the four layouts, zoom, sort, the frame loop
+js/controls.js              search, highlight filters, colour-by, themes, phone controls
+js/atoms.js                 3D Bohr atom and 3D orbital shapes
+js/detail.js                element card, tabs, keyboard, share links
+js/starfield.js             background stars
+js/sfx.js                   sounds
+js/main.js                  start-up: runs init, then the frame loop, then the PWA setup
 icons/                      icon-192.png, icon-512.png, icon-maskable-512.png,
                              apple-touch-icon.png, favicon.png, favicon.ico
 ```
@@ -26,12 +38,39 @@ scope defaults to the folder it's served from, so moving `sw.js` into a
 subfolder would stop it controlling the pages at the root.
 
 No build step, no npm, no dev server. The only outside code is three.js r128,
-tween.js 18.6.4, `CSS3DRenderer.js` and `OrbitControls.js`, loaded from a CDN
-inside `table.html`.
+tween.js 18.6.4 and `OrbitControls.js`, loaded from a CDN inside `table.html`.
+
+The `js/` files are plain scripts, not modules. They share one global scope and
+`table.html` loads them in the order listed above, so that order matters: a
+file can use anything defined in a file above it.
+
+## How the tiles are drawn
+
+The 118 tiles are flat WebGL rectangles, not HTML elements. One shader draws
+the rounded card, border, glow, hover sheen and search pulse. All the text is
+painted once onto a single image (a "text atlas") and each tile shows its own
+piece of it. Because the browser no longer has to restyle 118 HTML nodes,
+colour changes, filters and sorting can ease smoothly on every tile at once.
+
+Each tile still has a real, invisible `<button>` (in `#tileProxies`) so the
+keyboard and screen readers work exactly as before: Tab to a tile, arrow keys
+to move, Enter to open.
+
+## Effects menu (performance mode)
+
+The **Effects** menu has three settings, remembered between visits:
+
+- **Auto** (default): watches real frame times while the table is moving. If
+  the device cannot keep up, it switches to Lite by itself and says so.
+- **Full**: everything on.
+- **Lite**: no aurora, grain or blur layers, lower pixel density, slower stars.
+
+All motion is timed in seconds, not frames, so it runs at whatever rate the
+screen offers: 60 FPS on a 60 Hz screen, 120 FPS on a 120 Hz screen.
 
 ## Bugs fixed in the original single-file version
 
-Every changed line is commented `// CHANGED` in `table.js`.
+Every changed line is commented `// CHANGED` in the `js/` files.
 
 1. **"Atomic mass" colour mode did nothing.** `propRange()` kept only values
    where `typeof v === "number"`, but every mass is stored as a string
@@ -46,22 +85,23 @@ Every changed line is commented `// CHANGED` in `table.js`.
 
 ## UI/UX + VFX pass on `table.html`
 
-Additive only — nothing here touches the 3D transforms the CSS3D renderer
-writes every frame, and every animation is switched off under
+Additive only — nothing here touches the 3D layout itself, and every
+animation is switched off under
 `prefers-reduced-motion: reduce`.
 
 - Real SVG icon set (`window.PT_ICONS`) instead of glyphs throughout the UI.
 - An accent-tinted aurora behind the scene, fine film grain, card hover sheen,
   pulsing search hits, and a breathing halo on the active element panel.
-- A squash-and-bounce reaction on selecting a card (via a `.tile-inner`
-  wrapper, so the animation doesn't fight the renderer's own transform).
+- A squash-and-bounce reaction on selecting a card.
 - Softer, rounder control bars/dropdowns/buttons, matching the landing page's
   claymorphism.
 - Springy `Back.Out` easing on Table/Sphere/Helix/Grid view transitions.
 - The landing page's pink/orange/yellow accent gradient reused for focus
   rings, active buttons and legend swatches — the dark base theme and the
   element category colours are untouched.
-- A slow idle "breathing" glow on cards at rest, paused on hover/match/tap.
+- Colour-by, highlight, search and sort changes ease on every tile, with a
+  diagonal wave when the colour scheme changes. (The old idle "breathing" glow
+  was removed: it was the main cause of lag.)
 
 ## Publish (GitHub Pages)
 

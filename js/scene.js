@@ -418,7 +418,8 @@
   function animate(t){
     requestAnimationFrame(animate); if(document.hidden){ _lastT=0; return; }
     t=t||performance.now();
-    const dt=_lastT?Math.min(0.1,(t-_lastT)/1000):1/60; _lastT=t;
+    const raw=_lastT?(t-_lastT)/1000:1/60, dt=Math.min(0.1,raw); _lastT=t;
+    PT_PERF.tick(raw);
     const tweening=TWEEN.getAll().length>0; TWEEN.update();
     const moved=controls.update();
     const open=overlay.classList.contains("show");

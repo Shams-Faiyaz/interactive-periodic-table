@@ -160,3 +160,61 @@ Total blocking time over the run: 447 → 90 ms (normal CPU), 5,931 → 279 ms (
 Note for returning visitors: the old service worker may show the old files once more. The new version takes over on the next visit or a refresh.
 
 All numbers come from headless Brave on this Mac. They were not measured on a real phone.
+
+
+---
+
+# Phase 2 — smooth transitions, WebGL tiles, performance mode (branch `webgl-tiles`)
+
+Status: built and tested locally, pushed as a preview branch. **Not on the live site yet.** It goes to `main` only after it has been tried on a real screen.
+
+## What changed
+
+| Area | Before | Now |
+|---|---|---|
+| Tiles | 118 HTML elements moved by CSS3DRenderer | 118 WebGL rectangles, one shader, one text image |
+| Colour-by, highlight, search, sort | Snapped, or a CSS fade on 118 nodes | Every tile eases; colour changes sweep across in a wave; sort labels cross-fade |
+| Idle breathing | Scale animation on every tile | Removed |
+| Idle work | Styles recalculated every frame | Nothing is drawn until something changes |
+| 3D atom | One mesh per electron (up to 118 draw calls), frame-based speed | One draw call per shell (16 for Og), time-based speed, stops drawing when paused |
+| Performance mode | None | Effects menu: Auto / Full / Lite, remembered |
+| Code | One 81 KB `table.js` | Eleven smaller files in `js/` |
+| Phone | Table started off-screen, install button over the search box | Whole table fits at 390 px, install button moved to the bottom corner |
+| Accessibility | Tiles were focusable divs | Real hidden buttons per tile, proper tabs, labels on icon buttons, keyboard legend, canvases labelled |
+| Closing a card | Clicks were ignored for about 0.3 s while it faded | Clicks go straight through |
+
+## Tests (local copy, headless Brave)
+
+- 118 of 118 tiles open the right card by mouse click. 8 of 8 sampled tiles by touch at 390 x 844.
+- Table, sphere, helix and grid views all draw and hit-test correctly.
+- All 10 colour modes and all 8 sort orders, both directions.
+- Search (4 matches for "ca", 114 dimmed), highlight menu, legend by keyboard, clear filters.
+- Keyboard: focus a tile, arrow to its neighbour, Enter opens it. Tabs report `aria-selected`.
+- Effects menu switches Lite on and off and is stored. Auto does not wrongly switch on a 30 Hz screen.
+- Reduced motion: stars off, no tweens, card opens with no fade.
+- No console errors in any run.
+
+## Measurements
+
+The Mac was on battery in Low Power Mode during this run, which caps every page (even a blank one) at 30 FPS. So frame rate could not be compared this time. The fair number is how busy the main thread is. Live site and new build were measured back to back in the same state.
+
+| Phase | Live now | New build | Live (4x CPU) | New build (4x CPU) |
+|---|---|---|---|---|
+| Idle | 9.3% | 7.8% | 35.8% | 12.1% |
+| Hovering tiles | 11.1% | 10.5% | 44.2% | 18.3% |
+| Scroll-panning | 12.1% | 10.3% | 25.1% | 15.5% |
+| Typing in search | 15.1% | 11.9% | 34.7% | 18.0% |
+| Switching table ↔ sphere | 23.1% | 12.2% | 79.7% | 17.4% |
+| Detail card open | 5.5% | 3.7% | 9.2% | 2.2% |
+
+Phone size (390 px, 4x CPU): idle 31.3% → 7.0%, hovering 36.8% → 12.7%.
+
+Style and layout work during a view switch at 4x CPU fell from 491 ms per second to 17.
+
+One thing got slightly worse: start-up. Painting the text image and compiling the shader adds a one-off cost when the page opens. Total blocking time over the run went from 68 to 127 ms (normal CPU) and 237 to 394 ms (4x CPU). Long tasks after start-up fell from 14 to 3 at 4x CPU.
+
+## What these tests cannot show
+
+- **120 FPS.** A headless browser has no 120 Hz screen. All motion is now timed in seconds, so it follows the screen: 120 FPS on a 120 Hz display, 60 on a 60 Hz one. A browser cannot draw faster than the screen refreshes, and Low Power Mode on a Mac caps it at 30.
+- **GPU smoothness.** The headless run measures the main thread, not how the picture looks. This needs a look on a real screen.
+- **Text at very high zoom.** Tile text is now an image, so it can look slightly soft when zoomed far in.

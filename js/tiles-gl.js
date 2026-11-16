@@ -165,7 +165,8 @@ const Tiles=(function(){
         opT:1, grayT:0, matchT:0, hoverT:0, focusT:0, tap:-1, sheen:1, hidden:false});
     });
     // redraw once the web fonts are in, so the atlas does not keep the fallback face
-    if(document.fonts&&document.fonts.load){
+    const _fontsIn=document.fonts&&document.fonts.check&&document.fonts.check("700 33px Exo")&&document.fonts.check("800 15px 'Roboto Mono'");
+    if(!_fontsIn&&document.fonts&&document.fonts.load){
       Promise.all(["700 33px Exo","700 18px Exo","800 15px 'Roboto Mono'","600 13px 'Roboto Mono'"].map(f=>document.fonts.load(f)))
         .then(()=>{ drawAtlas(cvA,false); texA.needsUpdate=true; if(sortProp){ drawAtlas(cvB,true); texB.needsUpdate=true; } render(); })
         .catch(()=>{});
