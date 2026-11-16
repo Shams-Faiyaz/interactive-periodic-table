@@ -9,7 +9,7 @@ Live: https://interactive-periodic-table-chi.vercel.app/
 - [x] Step 2 — hunt causes (3 Opus workers reported)
 - [x] Step 3 — fix (applied, measured)
 - [x] Step 4 — verify (round 1 failed on one old bug, fixed, round 2 passed)
-- [ ] Step 5 — commit, push, confirm deploy
+- [x] Step 5 — commit, push, confirm deploy (live)
 
 ## Step 0 — copies found
 
@@ -136,3 +136,27 @@ Things the verifier noted that are NOT fixed (they are design or layout matters,
 - On mobile the install button overlaps the right end of the search box.
 - In grid view (f-block) the Lu tile sits partly behind the zoom control.
 - The detail card still fades out briefly with reduced motion on.
+
+## Step 5 — deployed and confirmed live
+
+- Commit `078a056` on `main`, pushed to GitHub 17 Nov 2026.
+- Vercel: commit status "success — Deployment has completed". The Vercel CLI is not signed in on this Mac, so this was read from GitHub's commit status, not `npx vercel ls`.
+- All six changed files on https://interactive-periodic-table-chi.vercel.app/ are byte-identical to the commit. The live service worker reports `periodic-3d-v11`.
+- On the live site: 118 of 118 tiles open the right card, no console errors.
+
+Live site, measured after deploy (same method as the baseline):
+
+| Phase | Before | After | Before (4x CPU) | After (4x CPU) |
+|---|---|---|---|---|
+| Idle | 26.2 | 60.2 | 15.1 | 60.2 |
+| Hovering tiles | 24.0 | 60.2 | 18.0 | 60.2 |
+| Scroll-panning | 31.2 | 60.1 | 14.3 | 60.0 |
+| Typing in search | 41.6 | 59.6 | 48.0 | 57.7 |
+| Switching table ↔ sphere | 26.8 | 57.3 | 15.6 | 32.0 |
+| Detail card open | 24.0 | 60.1 | 14.5 | 60.1 |
+
+Total blocking time over the run: 447 → 90 ms (normal CPU), 5,931 → 279 ms (4x CPU). Long tasks: 4 → 1 (normal), about 330 → 14 (4x). Mobile 390px at 4x CPU: idle 23 → 60 FPS, detail card 14 → 60, blocking time 1,260 → 116 ms.
+
+Note for returning visitors: the old service worker may show the old files once more. The new version takes over on the next visit or a refresh.
+
+All numbers come from headless Brave on this Mac. They were not measured on a real phone.
