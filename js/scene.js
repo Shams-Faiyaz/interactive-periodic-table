@@ -259,7 +259,7 @@
       transform(targets.sphere,900,fitDist.sphere); syncZoomSlider(); return;
     }
     const key=sorting?"sort":curLayout;
-    transform(targets[key]||targets.table,900,fitDist[key]||fitDist.table);
+    transform(targets[key]||targets.table,900,fitDist[key]||fitDist.table,key==='table'||key==='sort');   // CHANGED: reset also undoes a tilt
     syncZoomSlider();
   }
   // pan the view by a screen-space delta (plain wheel/trackpad = scroll through the table)
@@ -361,13 +361,13 @@
     cards.forEach((c,i)=>Tiles.setState(i,typeof ELEMENTS[i][prop]!=="number",false));
   }
 
-  function transform(arr,dur,camZ){
+  function transform(arr,dur,camZ,straight){   // straight: face the layout head-on (used by reset)
     TWEEN.removeAll();
     if(dur<=0 && typeof camZ!=="number"){ placeInstant(arr); return; }   // PERF: no zero-length tweens (resize in grid view)
     if(reduceMotion){
       placeInstant(arr);
       if(typeof camZ==="number"){
-        const dir=camera.position.clone().sub(controls.target).normalize();
+        const dir=straight?new THREE.Vector3(0,0,1):camera.position.clone().sub(controls.target).normalize();
         camera.position.copy(dir.multiplyScalar(camZ)); controls.target.set(0,0,0); controls.update();
       }
       render(); return;
@@ -384,7 +384,7 @@
     }
     // glide the camera straight back to frame the new layout, re-centering it
     if(typeof camZ==="number"){
-      const dir=camera.position.clone().sub(controls.target).normalize();
+      const dir=straight?new THREE.Vector3(0,0,1):camera.position.clone().sub(controls.target).normalize();
       const end=dir.multiplyScalar(camZ);
       new TWEEN.Tween(camera.position).to({x:end.x,y:end.y,z:end.z},dur*1.1)
         .easing(TWEEN.Easing.Quadratic.Out).start();
